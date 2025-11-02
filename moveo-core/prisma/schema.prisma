@@ -1,0 +1,385 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model UserAuth {
+  id       BigInt @id @default(autoincrement())
+  userId   BigInt
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userType   String
+  provider String
+  identifier String @unique
+  password String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_auth")
+}
+
+model UserActivation {
+  id BigInt @id @default(autoincrement())
+  userId BigInt
+  activationCode String @unique
+  expiresAt DateTime
+  isUsed Boolean @default(false)
+  createdAt DateTime @default(now())
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_activation")
+}
+
+
+model User {
+  id       BigInt @id @default(autoincrement())
+  name     String
+  email    String
+  phone    String
+  qid    String?
+  userType    Int @default(0) // 0: user, 1: driver, 2: admin, 3: manager
+  isActive Boolean @default(false)
+  roles    UserRole[]
+  userActivations UserActivation[]
+  userAuths UserAuth[]
+  drivers Driver[]
+
+  // Composite unique constraints: phone + userType, email + userType, qid + userType
+  @@unique([phone, userType])
+  @@unique([email, userType])
+  @@unique([qid, userType])
+  @@map("user")
+}
+
+
+model Role {
+  id    BigInt @id @default(autoincrement())
+  name  String
+  users UserRole[]
+
+  @@map("role")
+}
+
+model UserRole {
+  id     BigInt @id @default(autoincrement())
+  userId BigInt
+  roleId BigInt
+  user   User   @relation(fields: [userId], references: [id])
+  role   Role   @relation(fields: [roleId], references: [id])
+
+  @@map("user_role")
+}
+
+model Driver {
+  id   BigInt @default(autoincrement()) @id
+  userId   BigInt @unique
+  licenseExpiry DateTime?
+  trips    Trip[]
+  shifts   Shift[]
+
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("driver")
+  Duty Duty[]
+}
+
+
+model VehicleModel {
+  id           BigInt @id @default(autoincrement())
+  make         String
+  year         Int
+  manufacturer String
+  capacity     Int
+  vehicles     Vehicle[]
+
+  @@map("vehicle_model")
+}
+
+model Vehicle {
+  id        BigInt        @id @default(autoincrement())
+  plateNo   String        @unique
+  fleetNo   String
+  modelId   BigInt
+  model     VehicleModel  @relation(fields: [modelId], references: [id])
+  trips     Trip[]
+  shifts    Shift[]
+  telemetry VehicleTelemetry[]
+  telemetryHistory VehicleTelemetryHistory[]
+
+  @@map("vehicle")
+  Duty Duty[]
+}
+
+model Location {
+  id  BigInt @id @default(autoincrement())
+  lat Decimal @db.Decimal(10, 8)
+  lon Decimal @db.Decimal(11, 8)
+  stops Stop[]
+
+  @@map("location")
+}
+
+model Stop {
+  id         BigInt    @id @default(autoincrement())
+  locationId BigInt
+  name       String
+  code       String
+  location   Location  @relation(fields: [locationId], references: [id])
+  routeStops RouteStop[]
+  tripStops  TripStop[]
+
+  @@map("stop")
+}
+
+model Route {
+  id                        BigInt      @id @default(autoincrement())
+  name                      String
+  code                      String
+  isActive                  Boolean     @default(true)
+  totalEstimatedDuration    Int         // in minutes
+  routeStops                RouteStop[]
+  trips                     Trip[]
+
+  @@map("route")
+  TripDuty TripDuty[]
+}
+
+model RouteStop {
+  id        BigInt @id @default(autoincrement())
+  routeId   BigInt
+  stopId    BigInt
+  stopOrder Int
+  isActive  Boolean @default(true)
+  path      String? // JSON path data
+  eta       Int?    // estimated time of arrival in minutes
+  waitTime  Int?    // wait time in minutes
+  route     Route   @relation(fields: [routeId], references: [id])
+  stop      Stop    @relation(fields: [stopId], references: [id])
+
+  @@map("route_stop")
+}
+
+model Trip {
+  id                  BigInt      @id @default(autoincrement())
+  routeId             BigInt
+  startTime           DateTime
+  endTime             DateTime?
+  startLocation       BigInt
+  endLocation         BigInt?
+  driverId            BigInt
+  vehicleId           BigInt
+  averageSpeed        Decimal? @db.Decimal(5, 2) // km/h
+  maxSpeed            Decimal? @db.Decimal(5, 2) // km/h
+  totalDistance       Decimal? @db.Decimal(10, 2) // km
+  totalDuration       Int? // in minutes
+  idleTime            Int? // in minutes
+  path                String?     // Polyline-encoded telemetry path
+  route               Route       @relation(fields: [routeId], references: [id])
+  driver              Driver      @relation(fields: [driverId], references: [id])
+  vehicle             Vehicle     @relation(fields: [vehicleId], references: [id])
+  tripStops           TripStop[]
+
+  @@map("trip")
+}
+
+model TripStop {
+  id           BigInt @id @default(autoincrement())
+  tripId       BigInt
+  stopId       BigInt
+  stopOrder    Int
+  arrivalTime  DateTime?
+  departureTime DateTime?
+  eta          Int? // estimated time of arrival in minutes
+  trip         Trip  @relation(fields: [tripId], references: [id])
+  stop         Stop  @relation(fields: [stopId], references: [id])
+
+  @@map("trip_stop")
+}
+
+model VehicleTelemetry {
+  id        BigInt   @id @default(autoincrement())
+  lat       Decimal  @db.Decimal(10, 8)
+  lon       Decimal  @db.Decimal(11, 8)
+  speed     Decimal? @db.Decimal(5, 2) // km/h
+  ignition  Boolean
+  trackedOn DateTime @default(now())
+  vehicleId BigInt
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id])
+
+  @@map("vehicle_telemetry")
+}
+
+model VehicleTelemetryHistory {
+  id        BigInt   @id @default(autoincrement())
+  lat       Decimal  @db.Decimal(10, 8)
+  lon       Decimal  @db.Decimal(11, 8)
+  speed     Decimal? @db.Decimal(5, 2) // km/h
+  ignition  Boolean
+  trackedOn DateTime
+  vehicleId BigInt
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id])
+
+  @@map("vehicle_telemetry_history")
+}
+
+model Shift {
+  id        BigInt   @id @default(autoincrement())
+  startTime DateTime
+  endTime   DateTime
+  vehicleId BigInt
+  driverId  BigInt
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id])
+  driver    Driver   @relation(fields: [driverId], references: [id])
+
+  @@map("shift")
+}
+
+model ServiceSchedule {
+  id        BigInt   @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  dutyTemplates DutyTemplate[]
+
+  @@map("service_schedule")
+  
+  vehicleBlockTemplates VehicleBlockTemplate[]
+  driverRunTemplates DriverRunTemplate[]
+}
+
+model VehicleBlockTemplate {
+  id        BigInt   @id @default(autoincrement())
+  scheduleId BigInt
+  code      String
+  color     String
+
+  schedule  ServiceSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduleId, code])
+
+  @@map("vehicle_block_template")
+
+  DutyTemplate DutyTemplate[]
+  VehicleBlock VehicleBlock[]
+}
+
+model DriverRunTemplate {
+  id        BigInt   @id @default(autoincrement())
+  scheduleId BigInt
+  code      String
+  color     String
+
+  schedule  ServiceSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduleId, code])
+
+  @@map("driver_run_template")
+
+  DutyTemplate DutyTemplate[]
+  DriverRun DriverRun[]
+}
+
+
+model DutyTemplate {
+  id        BigInt   @id @default(autoincrement())
+  name      String?
+  startTime DateTime
+  endTime   DateTime
+  dutyType  DutyType
+  vehicleBlockTemplateId BigInt?
+  vehicleBlockTemplate VehicleBlockTemplate? @relation(fields: [vehicleBlockTemplateId], references: [id])
+  driverRunTemplateId BigInt?
+  driverRunTemplate DriverRunTemplate? @relation(fields: [driverRunTemplateId], references: [id])
+  scheduleId BigInt
+  schedule  ServiceSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("duty_template")
+}
+
+model VehicleBlock {
+  id        BigInt   @id @default(autoincrement())
+  vehicleBlockTemplateId BigInt
+  code      String @unique
+
+  vehicleBlockTemplate VehicleBlockTemplate @relation(fields: [vehicleBlockTemplateId], references: [id])
+
+  @@map("vehicle_block")
+  
+  Duty Duty[]
+}
+
+model DriverRun {
+  id        BigInt   @id @default(autoincrement())
+  driverRunTemplateId BigInt
+  code      String @unique
+
+  driverRunTemplate DriverRunTemplate @relation(fields: [driverRunTemplateId], references: [id])
+
+  @@map("driver_run")
+
+  Duty Duty[]
+}
+
+model Duty {
+  id        BigInt   @id @default(autoincrement())
+  date      DateTime
+  startTime DateTime
+  endTime   DateTime
+  driverId BigInt?
+  vehicleId BigInt?
+
+  dutyTemplateId BigInt?
+  blockId BigInt?
+  runId BigInt?
+
+  block VehicleBlock? @relation(fields: [blockId], references: [id])
+  run DriverRun? @relation(fields: [runId], references: [id])
+  driver Driver? @relation(fields: [driverId], references: [id])
+  vehicle Vehicle? @relation(fields: [vehicleId], references: [id])
+  dutyType DutyType
+  tripDuties TripDuty[]
+  washingDuties WashingDuty[]
+  maintenanceDuties MaintenanceDuty[]
+
+  @@map("duty")
+}
+
+enum DutyType {
+  TRIP
+  WASHING
+  MAINTENANCE
+}
+
+model TripDuty {
+  id        BigInt   @id @default(autoincrement())
+  dutyId      BigInt
+  routeId BigInt
+  duty Duty @relation(fields: [dutyId], references: [id])
+  route Route @relation(fields: [routeId], references: [id])
+
+  @@map("trip_duty")
+}
+
+model WashingDuty {
+  id        BigInt   @id @default(autoincrement())
+  dutyId      BigInt
+  duty Duty @relation(fields: [dutyId], references: [id])
+
+  @@map("washing_duty")
+}
+
+model MaintenanceDuty {
+  id        BigInt   @id @default(autoincrement())
+  dutyId      BigInt
+  duty Duty @relation(fields: [dutyId], references: [id])
+  
+  @@map("maintenance_duty")
+}

@@ -1,0 +1,83 @@
+### Updated Driver Controller Tests
+### Tests the new Driver-User relationship structure
+
+### 1. Create Driver (creates both User and Driver records)
+POST http://localhost:3000/api/drivers
+Content-Type: application/json
+
+{
+  "name": "Ahmed Al-Mahmoud",
+  "qid": "1234567890123456",
+  "phone": "+97412345678",
+  "email": "ahmed.driver@example.com",
+  "licenseExpiry": "2025-12-31"
+}
+
+### 2. Get All Drivers (should include user info)
+GET http://localhost:3000/api/drivers
+
+### 3. Get Driver by ID (should include user info)
+GET http://localhost:3000/api/drivers/1
+
+### 4. Update Driver (updates both User and Driver records)
+PUT http://localhost:3000/api/drivers/1
+Content-Type: application/json
+
+{
+  "name": "Ahmed Al-Mahmoud Updated",
+  "phone": "+97412345679",
+  "email": "ahmed.updated@example.com",
+  "licenseExpiry": "2026-12-31"
+}
+
+### 5. Get Driver Shifts (should include driver info)
+GET http://localhost:3000/api/drivers/1/shifts
+
+### 6. Delete Driver (should cascade delete User record)
+DELETE http://localhost:3000/api/drivers/1
+
+### 7. Test Duplicate Phone/Email Prevention (Same User Type)
+POST http://localhost:3000/api/drivers
+Content-Type: application/json
+
+{
+  "name": "Another Driver",
+  "phone": "+97412345678",
+  "email": "ahmed.driver@example.com"
+}
+
+### 8. Test Multiple User Records (Should Allow Same Phone Across User Types)
+### First create a regular user (userType: 0)
+POST http://localhost:3000/api/auth/users
+Content-Type: application/json
+
+{
+  "name": "Regular User",
+  "phone": "+97412345678",
+  "email": "ahmed.driver@example.com"
+}
+
+### Then create a driver with same phone (Should Create New User Record!)
+POST http://localhost:3000/api/drivers
+Content-Type: application/json
+
+{
+  "name": "Same Person as Driver",
+  "phone": "+97412345678",
+  "email": "ahmed.driver@example.com",
+  "licenseExpiry": "2025-12-31"
+}
+
+### 9. Verify Both User Records Exist
+GET http://localhost:3000/api/auth/users
+
+### 10. Try to Create Another Driver with Same Phone (Should Fail!)
+POST http://localhost:3000/api/drivers
+Content-Type: application/json
+
+{
+  "name": "Another Driver Attempt",
+  "phone": "+97412345678",
+  "email": "different@example.com",
+  "licenseExpiry": "2025-12-31"
+}

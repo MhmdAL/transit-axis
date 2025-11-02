@@ -1,0 +1,30 @@
+### Get All Stops
+GET http://localhost:3000/api/stops
+
+### Get Stop by ID
+GET http://localhost:3000/api/stops/1
+
+### Create Stop
+POST http://localhost:3000/api/stops
+Content-Type: application/json
+
+{
+  "name": "Central Station 3",
+  "code": "CS001",
+  "lat": 25.2854,
+  "lon": 51.5310
+}
+
+### Update Stop
+PUT http://localhost:3000/api/stops/1
+Content-Type: application/json
+
+{
+  "name": "Central Station Updated",
+  "code": "CS001-UPDATED",
+  "lat": 25.2854,
+  "lon": 51.5310
+}
+
+### Delete Stop
+DELETE http://localhost:3000/api/stops/1

@@ -1,0 +1,173 @@
+### Test Duties API Integration
+
+# Get all duties
+GET http://localhost:3000/api/duties
+Authorization: Bearer YOUR_TOKEN_HERE
+
+###
+
+# Get duties with date filter
+GET http://localhost:3000/api/duties?date=2024-01-15
+Authorization: Bearer YOUR_TOKEN_HERE
+
+###
+
+# Get duties with date range filter (startDate and endDate)
+GET http://localhost:3000/api/duties?startDate=2024-01-15&endDate=2024-01-20
+Authorization: Bearer YOUR_TOKEN_HERE
+
+###
+
+# Get duties with startDate only
+GET http://localhost:3000/api/duties?startDate=2024-01-15
+Authorization: Bearer YOUR_TOKEN_HERE
+
+###
+
+# Get duties with endDate only
+GET http://localhost:3000/api/duties?endDate=2024-01-20
+Authorization: Bearer YOUR_TOKEN_HERE
+
+###
+
+# Get duties with duty type filter
+GET http://localhost:3000/api/duties?dutyType=TRIP
+Authorization: Bearer YOUR_TOKEN_HERE
+
+###
+
+# Get duties with multiple driver IDs
+GET http://localhost:3000/api/duties?driverIds=1&driverIds=2&driverIds=3
+Authorization: Bearer YOUR_TOKEN_HERE
+
+###
+
+# Get duties with multiple vehicle IDs
+GET http://localhost:3000/api/duties?vehicleIds=1&vehicleIds=2&vehicleIds=3
+Authorization: Bearer YOUR_TOKEN_HERE
+
+###
+
+# Get duties with multiple route IDs
+GET http://localhost:3000/api/duties?routeIds=1&routeIds=2&routeIds=3
+Authorization: Bearer YOUR_TOKEN_HERE
+
+###
+
+# Get duties with multiple filters (drivers, vehicles, routes)
+GET http://localhost:3000/api/duties?driverIds=1&driverIds=2&vehicleIds=1&vehicleIds=2&routeIds=1&routeIds=2
+Authorization: Bearer YOUR_TOKEN_HERE
+
+###
+
+# Get duties with single driver filter (backward compatibility)
+GET http://localhost:3000/api/duties?driverId=1
+Authorization: Bearer YOUR_TOKEN_HERE
+
+###
+
+# Get duties with single vehicle filter (backward compatibility)
+GET http://localhost:3000/api/duties?vehicleId=1
+Authorization: Bearer YOUR_TOKEN_HERE
+
+###
+
+# Get duties with single route filter (backward compatibility)
+GET http://localhost:3000/api/duties?routeId=1
+Authorization: Bearer YOUR_TOKEN_HERE
+
+###
+
+# Get duties with schedule filter
+GET http://localhost:3000/api/duties?scheduleId=1
+Authorization: Bearer YOUR_TOKEN_HERE
+
+###
+
+# Get duties with date range and duty type filter
+GET http://localhost:3000/api/duties?startDate=2024-01-15&endDate=2024-01-20&dutyType=TRIP
+Authorization: Bearer YOUR_TOKEN_HERE
+
+###
+
+# Get duties with date range, duty type, and route filter
+GET http://localhost:3000/api/duties?startDate=2025-10-28&endDate=2025-10-29&dutyType=TRIP&routeId=1
+Authorization: Bearer YOUR_TOKEN_HERE
+
+###
+
+# Get duties with multiple filters
+GET http://localhost:3000/api/duties?date=2024-01-15&dutyType=TRIP&routeId=1
+Authorization: Bearer YOUR_TOKEN_HERE
+
+###
+
+# Get duties with pagination
+GET http://localhost:3000/api/duties?page=1&limit=10
+Authorization: Bearer YOUR_TOKEN_HERE
+
+###
+
+# Get duties with pagination and filters
+GET http://localhost:3000/api/duties?page=1&limit=10&date=2024-01-15&dutyType=TRIP
+Authorization: Bearer YOUR_TOKEN_HERE
+
+###
+
+# Create a new duty
+POST http://localhost:3000/api/duties
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "date": "2024-01-15T00:00:00Z",
+  "startTime": "2024-01-15T08:00:00Z",
+  "endTime": "2024-01-15T09:00:00Z",
+  "scheduleId": "1",
+  "dutyType": "TRIP"
+}
+
+###
+
+# Update a duty
+PUT http://localhost:3000/api/duties/1
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "driverId": "1",
+  "vehicleId": "1"
+}
+
+###
+
+# Delete a duty
+DELETE http://localhost:3000/api/duties/1
+Authorization: Bearer YOUR_TOKEN_HERE
+
+###
+
+# Create bulk trip duties (from trip generation)
+POST http://localhost:3000/api/duties/bulk-trips
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "scheduleId": "1",
+  "routeId": "1",
+  "date": "2024-01-15",
+  "trips": [
+    {
+      "scheduledStartTime": "08:00",
+      "scheduledEndTime": "09:00"
+    },
+    {
+      "scheduledStartTime": "09:30",
+      "scheduledEndTime": "10:30"
+    },
+    {
+      "scheduledStartTime": "11:00",
+      "scheduledEndTime": "12:00"
+    }
+  ]
+}

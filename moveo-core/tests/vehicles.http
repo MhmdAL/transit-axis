@@ -1,0 +1,30 @@
+### Get All Vehicles
+GET http://localhost:3000/api/vehicles
+
+### Get Vehicle by ID
+GET http://localhost:3000/api/vehicles/4
+
+### Create Vehicle
+POST http://localhost:3000/api/vehicles
+Content-Type: application/json
+
+{
+  "plateNo": "ABC-123",
+  "fleetNo": "FL001",
+  "vehicleModelId": "1"
+}
+
+### Update Vehicle
+PUT http://localhost:3000/api/vehicles/1
+Content-Type: application/json
+
+{
+  "plateNo": "XYZ-789",
+  "fleetNo": "FL002",
+  "make": "Honda",
+  "model": "Civic",
+  "year": 2024
+}
+
+### Delete Vehicle
+DELETE http://localhost:3000/api/vehicles/1

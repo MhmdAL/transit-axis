@@ -1,0 +1,36 @@
+@baseUrl = http://localhost:3003
+
+### Health Check
+GET {{baseUrl}}/health
+
+### Create Telemetry
+POST {{baseUrl}}/api/telemetry
+Content-Type: application/json
+
+{
+  "vehicleId": 1,
+  "tripId": 1,
+  "latitude": 33.9454,
+  "longitude": 33.9284,
+  "speed": 45.5,
+  "heading": 180
+}
+
+### List All Telemetry
+GET {{baseUrl}}/api/telemetry
+
+### Get Vehicle 1 Telemetry
+GET {{baseUrl}}/api/telemetry/3
+
+### Get Vehicle 1 Logs
+GET {{baseUrl}}/api/telemetry/3/logs
+
+### Get Vehicle 1 Logs for Trip 1
+GET {{baseUrl}}/api/telemetry/3/logs?tripId=1
+
+### Get Vehicle 1 Path (Polyline)
+GET {{baseUrl}}/api/telemetry/1/path
+
+### Get Vehicle 1 Path for Trip 1
+GET {{baseUrl}}/api/telemetry/1/path?tripId=1
+

@@ -1,0 +1,38 @@
+### Simple Password Authentication Flow Test
+### This tests the updated flow: create user -> activate -> login
+
+### 1. Create User (Staff creates user with email)
+POST http://localhost:3000/api/auth/users
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "john.doe@example.com",
+  "phone": "+1234567890"
+}
+
+### 2. Activate Account (User sets username/password)
+POST http://localhost:3000/api/auth/activate
+Content-Type: application/json
+
+{
+  "activationCode": "REPLACE_WITH_ACTUAL_CODE_FROM_EMAIL",
+  "password": "newpassword123",
+  "username": "johndoe"
+}
+
+### 3. Login with Password
+POST http://localhost:3000/api/auth/login-password
+Content-Type: application/json
+
+{
+  "username": "johndoe",
+  "password": "newpassword123"
+}
+
+### 4. Get User Profile (Protected route)
+GET http://localhost:3000/api/auth/profile
+Authorization: Bearer REPLACE_WITH_JWT_TOKEN
+
+
+

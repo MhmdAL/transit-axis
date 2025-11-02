@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: moveo-postgres
+    environment:
+      POSTGRES_DB: moveo_fleet
+      POSTGRES_USER: moveo_user
+      POSTGRES_PASSWORD: moveo_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db-schema.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - moveo-network
+
+  app:
+    build: .
+    container_name: moveo-api
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://moveo_user:moveo_password@postgres:5432/moveo_fleet?schema=public
+      - JWT_SECRET=your-super-secret-jwt-key-here
+      - PORT=3000
+    depends_on:
+      - postgres
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - moveo-network
+    command: npm run dev
+
+volumes:
+  postgres_data:
+
+networks:
+  moveo-network:
+    driver: bridge
+

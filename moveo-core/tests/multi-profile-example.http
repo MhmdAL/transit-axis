@@ -1,0 +1,41 @@
+### Multi-Profile User Example
+### Demonstrates how the same person can have multiple profiles
+
+### 1. Create Regular User (userType: 0)
+POST http://localhost:3000/api/auth/users
+Content-Type: application/json
+
+{
+  "name": "John Smith",
+  "phone": "+97412345678",
+  "email": "john@example.com"
+}
+
+### 2. Create Driver Profile for Same Person (Should Create New User Record!)
+### This will create a separate user record for the driver role
+POST http://localhost:3000/api/drivers
+Content-Type: application/json
+
+{
+  "name": "John Smith",
+  "phone": "+97412345678",
+  "email": "john@example.com",
+  "licenseExpiry": "2025-12-31"
+}
+
+### 3. Try to Create Another Driver with Same Phone (Should Fail!)
+POST http://localhost:3000/api/drivers
+Content-Type: application/json
+
+{
+  "name": "Different Driver",
+  "phone": "+97412345678",
+  "email": "different@example.com"
+}
+
+### 4. Verify Both Profiles Exist
+### Get all users (should show both profiles)
+GET http://localhost:3000/api/auth/users
+
+### Get all drivers (should show driver profile)
+GET http://localhost:3000/api/drivers

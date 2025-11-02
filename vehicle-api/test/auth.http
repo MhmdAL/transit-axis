@@ -1,0 +1,32 @@
+@baseUrl = http://localhost:3002
+
+### Health Check
+GET {{baseUrl}}
+
+### Driver Login
+# @name loginSuccess
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "mohammadalnoss@outlook.com",
+  "password": "123456"
+}
+
+### Login - Invalid Email
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "nonexistent@example.com",
+  "password": "password123"
+}
+
+### Login - Wrong Password
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "mohammadalnoss@outlook.com",
+  "password": "wrongpassword"
+}

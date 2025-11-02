@@ -1,0 +1,80 @@
+### Test Trips API Integration
+
+# Get all trips
+GET http://localhost:3000/api/trips
+Authorization: Bearer YOUR_TOKEN_HERE
+
+###
+
+# Create a new trip
+POST http://localhost:3000/api/trips
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "routeId": "1",
+  "scheduledStartTime": "2024-01-15T08:00:00Z",
+  "scheduledEndTime": "2024-01-15T09:00:00Z"
+}
+
+###
+
+# Assign vehicle to trip
+PUT http://localhost:3000/api/trips/1/assign-vehicle
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "vehicleId": "1"
+}
+
+###
+
+# Assign driver to trip
+PUT http://localhost:3000/api/trips/1/assign-driver
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "driverId": "1"
+}
+
+###
+
+# Update trip
+PUT http://localhost:3000/api/trips/1
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "scheduledStartTime": "2024-01-15T08:30:00Z",
+  "scheduledEndTime": "2024-01-15T09:30:00Z"
+}
+
+###
+
+# Start trip
+PATCH http://localhost:3000/api/trips/1/start
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "startLocation": "1"
+}
+
+###
+
+# End trip (automatically fetches and stores telemetry path)
+PATCH http://localhost:3000/api/trips/1/end
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "endLocation": "2"
+}
+
+###
+
+# Delete trip
+DELETE http://localhost:3000/api/trips/1
+Authorization: Bearer YOUR_TOKEN_HERE

@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Telemetry {
+  id        Int      @id @default(autoincrement())
+  vehicleId Int      @unique
+  tripId    Int?
+  latitude  Float
+  longitude Float
+  speed     Float?
+  heading   Float?
+  altitude  Float?
+  accuracy  Float?
+  odometer  Float?   // Vehicle odometer reading in km
+  timestamp DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("telemetry")
+}
+
+model TelemetryLog {
+  id        Int      @id @default(autoincrement())
+  vehicleId Int
+  tripId    Int?
+  latitude  Float
+  longitude Float
+  speed     Float?
+  heading   Float?
+  altitude  Float?
+  accuracy  Float?
+  odometer  Float?   // Vehicle odometer reading in km
+  timestamp DateTime
+  createdAt DateTime @default(now())
+
+  @@index([vehicleId])
+  @@index([tripId])
+  @@index([timestamp])
+  @@map("telemetry_logs")
+}
+

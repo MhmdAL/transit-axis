@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: telemetry-postgres
+    environment:
+      POSTGRES_DB: moveo_telemetry
+      POSTGRES_USER: telemetry_user
+      POSTGRES_PASSWORD: telemetry_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - telemetry_postgres_data:/var/lib/postgresql/data
+    networks:
+      - telemetry-network
+
+  app:
+    build: .
+    container_name: telemetry-api
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://telemetry_user:telemetry_password@postgres:5432/moveo_telemetry?schema=public
+      - PORT=3003
+    depends_on:
+      - postgres
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - telemetry-network
+    command: npm run dev
+
+volumes:
+  telemetry_postgres_data:
+
+networks:
+  telemetry-network:
+    driver: bridge
+

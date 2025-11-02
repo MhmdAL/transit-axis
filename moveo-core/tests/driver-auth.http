@@ -1,0 +1,56 @@
+@baseUrl = http://localhost:3000
+@driverEmail = mohammadalnoss@outlook.com
+@driverPassword = 123456
+
+### Driver Login
+# @name driverLoginSuccess
+POST {{baseUrl}}/api/auth/driver-login
+Content-Type: application/json
+
+{
+  "email": "{{driverEmail}}",
+  "password": "{{driverPassword}}"
+}
+
+### Driver Login - Invalid Email
+POST {{baseUrl}}/api/auth/driver-login
+Content-Type: application/json
+
+{
+  "email": "nonexistent@example.com",
+  "password": "{{driverPassword}}"
+}
+
+### Driver Login - Wrong Password
+POST {{baseUrl}}/api/auth/driver-login
+Content-Type: application/json
+
+{
+  "email": "{{driverEmail}}",
+  "password": "wrongpassword"
+}
+
+### Driver Login - Missing Email
+POST {{baseUrl}}/api/auth/driver-login
+Content-Type: application/json
+
+{
+  "password": "{{driverPassword}}"
+}
+
+### Driver Login - Missing Password
+POST {{baseUrl}}/api/auth/driver-login
+Content-Type: application/json
+
+{
+  "email": "{{driverEmail}}"
+}
+
+### Get Profile
+GET {{baseUrl}}/api/auth/profile
+Authorization: Bearer {{driverLoginSuccess.response.body.data.token}}
+
+### Get Drivers List
+GET {{baseUrl}}/api/drivers
+Authorization: Bearer {{driverLoginSuccess.response.body.data.token}}
+

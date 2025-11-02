@@ -1,0 +1,50 @@
+### Get All Drivers
+GET http://localhost:3000/api/drivers
+
+### Get Driver by ID
+GET http://localhost:3000/api/drivers/1
+
+### Create Driver
+POST http://localhost:3000/api/drivers
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "qid": "123456789031",
+  "phone": "1234567890",
+  "email": "john.doe@example.com"
+}
+
+### Update Driver
+PUT http://localhost:3000/api/drivers/1
+Content-Type: application/json
+
+{
+  "name": "John Doe Updated",
+  "qid": "123456789031",
+  "phone": "9876543210",
+  "email": "john.updated@example.com"
+}
+
+### Delete Driver
+DELETE http://localhost:3000/api/drivers/1
+
+### Get Driver Shifts
+GET http://localhost:3000/api/drivers/1/shifts
+
+### Generate OTP for Driver Login
+POST http://localhost:3000/api/drivers/generate-otp
+Content-Type: application/json
+
+{
+  "phone": "66533930"
+}
+
+### Login with OTP
+POST http://localhost:3000/api/drivers/login-otp
+Content-Type: application/json
+
+{
+  "phone": "66533930",
+  "otp": "736259"
+}

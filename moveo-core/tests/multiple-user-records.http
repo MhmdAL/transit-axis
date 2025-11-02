@@ -1,0 +1,66 @@
+### Multiple User Records Example
+### Demonstrates how same person can have separate user records for different roles
+
+### 1. Create Regular User (userType: 0)
+POST http://localhost:3000/api/auth/users
+Content-Type: application/json
+
+{
+  "name": "Ahmed Al-Mahmoud",
+  "phone": "+97412345678",
+  "email": "ahmed@example.com"
+}
+
+### 2. Verify First User Created
+GET http://localhost:3000/api/auth/users
+
+### 3. Create Driver Profile for Same Person (userType: 1)
+### This creates a SEPARATE user record for the driver role
+POST http://localhost:3000/api/drivers
+Content-Type: application/json
+
+{
+  "name": "Ahmed Al-Mahmoud",
+  "phone": "+97412345678",
+  "email": "ahmed@example.com",
+  "licenseExpiry": "2025-12-31"
+}
+
+### 4. Verify Two Separate User Records Exist
+GET http://localhost:3000/api/auth/users
+### Should show 2 users with same phone but different userType
+
+### 5. Verify Driver Created
+GET http://localhost:3000/api/drivers
+
+### 6. Try to Create Another Driver with Same Phone (Should Fail!)
+POST http://localhost:3000/api/drivers
+Content-Type: application/json
+
+{
+  "name": "Different Driver",
+  "phone": "+97412345678",
+  "email": "different@example.com",
+  "licenseExpiry": "2025-12-31"
+}
+
+### 7. Test with Different Phone (Should Work)
+POST http://localhost:3000/api/drivers
+Content-Type: application/json
+
+{
+  "name": "Another Driver",
+  "phone": "+97487654321",
+  "email": "another@example.com",
+  "licenseExpiry": "2025-12-31"
+}
+
+### 8. Final Verification - Should Have 3 Users Total
+GET http://localhost:3000/api/auth/users
+### Should show:
+### - User 1: Ahmed (userType: 0) - Regular user
+### - User 2: Ahmed (userType: 1) - Driver user  
+### - User 3: Another Driver (userType: 1) - Different driver
+
+
+

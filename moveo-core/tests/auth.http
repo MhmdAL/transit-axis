@@ -1,0 +1,70 @@
+### Health Check
+GET http://localhost:3000/health
+
+### Get All Users
+GET http://localhost:3000/api/auth/users
+
+### Create User
+POST http://localhost:3000/api/auth/users
+Content-Type: application/json
+
+{
+  "name": "Mohamad Alnass",
+  "username": "mhmdal",
+  "phone": "66533930"
+}
+
+### Login with Password
+POST http://localhost:3000/api/auth/login-password
+Content-Type: application/json
+
+{
+  "username": "mhmdal",
+  "password": "123456"
+}
+
+### Generate OTP for User
+POST http://localhost:3000/api/auth/generate-otp
+Content-Type: application/json
+
+{
+  "username": "johndoe"
+}
+
+### Login with OTP
+POST http://localhost:3000/api/auth/login-otp
+Content-Type: application/json
+
+{
+  "username": "johndoe",
+  "otp": "202017"
+}
+
+
+### Get All Users with Pagination
+GET http://localhost:3000/api/auth/users?page=1&limit=5
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+### Search Users
+GET http://localhost:3000/api/auth/users?search=john
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+### Get User Profile (requires auth token)
+GET http://localhost:3000/api/auth/profile
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+### Refresh Token
+POST http://localhost:3000/api/auth/refresh
+Content-Type: application/json
+
+{
+  "token": "YOUR_JWT_TOKEN_HERE"
+}
+
+### Logout
+POST http://localhost:3000/api/auth/logout
+Content-Type: application/json
+
+{
+  "token": "YOUR_JWT_TOKEN_HERE"
+}

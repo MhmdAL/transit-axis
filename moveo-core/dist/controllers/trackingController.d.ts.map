@@ -1,0 +1,1 @@
+{"version":3,"file":"trackingController.d.ts","sourceRoot":"","sources":["../../src/controllers/trackingController.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,OAAO,EAAE,QAAQ,EAAE,YAAY,EAAE,MAAM,SAAS,CAAC;AAK1D,eAAO,MAAM,kBAAkB;wBACH,OAAO,OAAO,QAAQ,QAAQ,YAAY;4BAqCtC,OAAO,OAAO,QAAQ,QAAQ,YAAY;4BA+B1C,OAAO,OAAO,QAAQ,QAAQ,YAAY;yBAqC7C,OAAO,OAAO,QAAQ,QAAQ,YAAY;CAgBtE,CAAC"}

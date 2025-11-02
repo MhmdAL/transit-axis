@@ -1,0 +1,25 @@
+POST http://localhost:3000/api/duties/bulk-trips
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "scheduleId": "1",
+  "routeId": "1", 
+  "date": "2024-01-15",
+  "trips": [
+    {
+      "scheduledStartTime": "08:00",
+      "scheduledEndTime": "09:00"
+    },
+    {
+      "scheduledStartTime": "08:30", 
+      "scheduledEndTime": "09:30"
+    },
+    {
+      "scheduledStartTime": "09:00",
+      "scheduledEndTime": "10:00"
+    }
+  ]
+}
+
+

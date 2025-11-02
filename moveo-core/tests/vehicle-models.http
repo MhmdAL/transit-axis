@@ -1,0 +1,33 @@
+### Get All Vehicle Models
+GET http://localhost:3000/api/vehicle-models
+
+### Get Vehicle Model by ID
+GET http://localhost:3000/api/vehicle-models/1
+
+### Search Vehicle Models
+GET http://localhost:3000/api/vehicle-models/search?search=Toyota
+
+### Create Vehicle Model
+POST http://localhost:3000/api/vehicle-models
+Content-Type: application/json
+
+{
+  "make": "Toyota",
+  "year": 2023,
+  "manufacturer": "Toyota Motor Corporation",
+  "capacity": 5
+}
+
+### Update Vehicle Model
+PUT http://localhost:3000/api/vehicle-models/1
+Content-Type: application/json
+
+{
+  "make": "Toyota",
+  "year": 2024,
+  "manufacturer": "Toyota Motor Corporation",
+  "capacity": 7
+}
+
+### Delete Vehicle Model
+DELETE http://localhost:3000/api/vehicle-models/1

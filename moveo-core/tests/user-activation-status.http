@@ -1,0 +1,37 @@
+### Test User List with Activation Status
+### This tests the updated user listing with activation status column
+
+### 1. Get All Users (should show activation status)
+GET http://localhost:3000/api/auth/users
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+### 2. Create a User (will be inactive by default)
+POST http://localhost:3000/api/auth/users
+Content-Type: application/json
+
+{
+  "name": "Test User",
+  "email": "test@example.com",
+  "phone": "+1234567890"
+}
+
+### 3. Get Users Again (should show new user as "Pending")
+GET http://localhost:3000/api/auth/users
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+### 4. Activate the User
+POST http://localhost:3000/api/auth/activate
+Content-Type: application/json
+
+{
+  "activationCode": "ACTIVATION_CODE_FROM_EMAIL",
+  "password": "password123",
+  "username": "testuser"
+}
+
+### 5. Get Users Again (should show user as "Active")
+GET http://localhost:3000/api/auth/users
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+
+

@@ -1,0 +1,20 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const tripController_1 = require("../controllers/tripController");
+const authMiddleware_1 = require("../middleware/authMiddleware");
+const router = (0, express_1.Router)();
+router.get('/', authMiddleware_1.authMiddleware, tripController_1.tripController.getAllTrips);
+router.get('/:id', authMiddleware_1.authMiddleware, tripController_1.tripController.getTripById);
+router.post('/', authMiddleware_1.authMiddleware, tripController_1.tripController.createTrip);
+router.put('/:id/assign-driver', authMiddleware_1.authMiddleware, tripController_1.tripController.assignDriverToTrip);
+router.put('/:id/assign-vehicle', authMiddleware_1.authMiddleware, tripController_1.tripController.assignVehicleToTrip);
+router.put('/:id', authMiddleware_1.authMiddleware, tripController_1.tripController.updateTrip);
+router.delete('/:id', authMiddleware_1.authMiddleware, tripController_1.tripController.deleteTrip);
+router.post('/:id/start', authMiddleware_1.authMiddleware, tripController_1.tripController.startTrip);
+router.post('/:id/end', authMiddleware_1.authMiddleware, tripController_1.tripController.endTrip);
+router.get('/:id/stops', authMiddleware_1.authMiddleware, tripController_1.tripController.getTripStops);
+router.put('/:id/stops/:stopId/arrive', authMiddleware_1.authMiddleware, tripController_1.tripController.arriveAtStop);
+router.put('/:id/stops/:stopId/depart', authMiddleware_1.authMiddleware, tripController_1.tripController.departFromStop);
+exports.default = router;
+//# sourceMappingURL=trips.js.map

@@ -1,0 +1,29 @@
+### Test bulk duty assignments update
+PUT http://localhost:3000/api/duties/bulk-assignments
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "assignments": [
+    {
+      "dutyId": "1",
+      "driverId": "1",
+      "vehicleId": "1"
+    },
+    {
+      "dutyId": "2",
+      "driverId": "2",
+      "vehicleId": "2"
+    }
+  ]
+}
+
+### Test get duties by route and date
+GET http://localhost:3000/api/duties?routeId=1&date=2024-01-15&dutyType=TRIP
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Test get all duties
+GET http://localhost:3000/api/duties
+Authorization: Bearer YOUR_TOKEN_HERE
+
+

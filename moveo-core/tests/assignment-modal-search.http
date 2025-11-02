@@ -1,0 +1,17 @@
+### Test driver search
+GET http://localhost:3000/api/drivers?search=john&limit=10
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Test vehicle search
+GET http://localhost:3000/api/vehicles?search=bus&limit=10
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Test get all drivers
+GET http://localhost:3000/api/drivers
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Test get all vehicles
+GET http://localhost:3000/api/vehicles
+Authorization: Bearer YOUR_TOKEN_HERE
+
+

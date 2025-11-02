@@ -1,0 +1,39 @@
+@baseUrl = http://localhost:3002
+
+### Login
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "mohammadalnoss@outlook.com",
+  "password": "123456"
+}
+
+### Start Trip
+# @name startTrip
+POST {{baseUrl}}/trips/start
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.data.token}}
+
+{
+  "routeId": "1",
+  "vehicleId": "1",
+  "driverId": "1",
+  "scheduledDepartureTime": "2025-10-30T10:00:00Z"
+}
+
+### End Trip
+PATCH {{baseUrl}}/trips/{{startTrip.response.body.data.id}}/end
+Authorization: Bearer {{login.response.body.data.token}}
+
+### Start Trip - Without Auth (should fail)
+POST {{baseUrl}}/trips/start
+Content-Type: application/json
+
+{
+  "routeId": "1",
+  "vehicleId": "1",
+  "driverId": "1",
+  "scheduledDepartureTime": "2025-10-30T10:00:00Z"
+}

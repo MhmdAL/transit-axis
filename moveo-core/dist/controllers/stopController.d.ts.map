@@ -1,0 +1,1 @@
+{"version":3,"file":"stopController.d.ts","sourceRoot":"","sources":["../../src/controllers/stopController.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,OAAO,EAAE,QAAQ,EAAE,YAAY,EAAE,MAAM,SAAS,CAAC;AAK1D,eAAO,MAAM,cAAc;qBACF,OAAO,OAAO,QAAQ,QAAQ,YAAY;qBAiB1C,OAAO,OAAO,QAAQ,QAAQ,YAAY;oBAuB3C,OAAO,OAAO,QAAQ,QAAQ,YAAY;CAqEjE,CAAC"}
