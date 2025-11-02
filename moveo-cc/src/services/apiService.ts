@@ -210,6 +210,56 @@ class ApiService {
     }
   }
 
+  async getVehicleTrips(vehicleId: string, limit: number = 10): Promise<any[]> {
+    try {
+      const response = await this.get<ApiResponse<any[]>>(
+        `/api/trips`,
+        { vehicleId, limit }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching vehicle trips:', error);
+      throw error;
+    }
+  }
+
+  async getTripTelemetry(tripId: string): Promise<any[]> {
+    try {
+      const response = await this.get<ApiResponse<any[]>>(
+        `/api/trips/${tripId}/telemetry`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching trip telemetry:', error);
+      throw error;
+    }
+  }
+
+  async getTripPath(tripId: string): Promise<any> {
+    try {
+      const response = await this.get<ApiResponse<any>>(
+        `/api/tracking/trips/${tripId}/path`
+      );
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching trip path:', error);
+      throw error;
+    }
+  }
+
+  async getTimeRangePath(vehicleId: string, startTime: string, endTime: string): Promise<any> {
+    try {
+      const response = await this.get<ApiResponse<any>>(
+        `/api/tracking/vehicles/${vehicleId}/path`,
+        { startTime, endTime }
+      );
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching time range path:', error);
+      throw error;
+    }
+  }
+
   // Telemetry API methods
   async getVehiclesTelemetry(vehicleIds: string[]): Promise<VehicleTelemetry[]> {
     try {

@@ -145,15 +145,19 @@ export const telemetryController = {
   async getTelemetryPath(req: Request, res: Response, next: NextFunction) {
     try {
       const { vehicleId } = req.params;
-      const { startTime, endTime, limit, tripId } = req.query;
+      const { startTime, endTime, limit } = req.query;
+
+      const parsedVehicleId = parseInt(vehicleId);
+      if (isNaN(parsedVehicleId)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid vehicleId'
+        });
+      }
 
       const where: any = {
-        vehicleId: parseInt(vehicleId)
+        vehicleId: parsedVehicleId
       };
-
-      if (tripId) {
-        where.tripId = parseInt(tripId as string);
-      }
 
       if (startTime || endTime) {
         where.timestamp = {};
@@ -177,7 +181,56 @@ export const telemetryController = {
         });
       }
 
-      // Convert logs to coordinate array for polyline encoding
+      const coordinates: [number, number][] = logs.map((log) => [log.latitude, log.longitude]);
+      const encodedPolyline = polyline.encode(coordinates);
+
+      return res.json({
+        success: true,
+        data: {
+          polyline: encodedPolyline,
+          points: logs.map((log) => ({
+            latitude: log.latitude,
+            longitude: log.longitude,
+            speed: log.speed,
+            heading: log.heading,
+            timestamp: log.timestamp
+          }))
+        }
+      });
+    } catch (error) {
+      return next(error);
+    }
+  },
+
+  async getTripPath(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { tripId } = req.params;
+
+      const parsedTripId = parseInt(tripId);
+      if (isNaN(parsedTripId)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid tripId'
+        });
+      }
+
+      const logs = await prisma.telemetryLog.findMany({
+        where: {
+          tripId: parsedTripId
+        },
+        orderBy: { timestamp: 'asc' }
+      });
+
+      if (logs.length === 0) {
+        return res.json({
+          success: true,
+          data: {
+            polyline: '',
+            points: []
+          }
+        });
+      }
+
       const coordinates: [number, number][] = logs.map((log) => [log.latitude, log.longitude]);
       const encodedPolyline = polyline.encode(coordinates);
 

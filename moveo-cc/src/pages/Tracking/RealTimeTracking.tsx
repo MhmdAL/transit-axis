@@ -9,6 +9,7 @@ import Sidebar from '../../components/Sidebar/Sidebar';
 import { useVehicleTracking } from '@/hooks/useVehicleTracking';
 import AddVehiclesModal from './AddVehiclesModal';
 import AddRoutesModal from './AddRoutesModal';
+import PathVisualizerModal from './PathVisualizerModal';
 import 'leaflet/dist/leaflet.css';
 import type { VehicleTelemetry } from '@/types';
 
@@ -359,6 +360,10 @@ const RealTimeTracking: React.FC = () => {
   const [routeStops, setRouteStops] = useState<Record<string, any[]>>({});
   const [vehicleSearchFilter, setVehicleSearchFilter] = useState('');
   const [hiddenVehicles, setHiddenVehicles] = useState<string[]>([]);
+  const [selectedVehicleForHistory, setSelectedVehicleForHistory] = useState<string | null>(null);
+  const [isTripHistoryModalOpen, setIsTripHistoryModalOpen] = useState(false);
+  const [tripTelemetryPath, setTripTelemetryPath] = useState<[number, number][]>([]);
+  const [activeTripInfo, setActiveTripInfo] = useState<any>(null);
 
   // Default center (you can change this to your preferred location)
   const defaultCenter: [number, number] = [25.3548, 51.1839]; // Doha, Qatar
@@ -511,6 +516,11 @@ const RealTimeTracking: React.FC = () => {
     setSelectedRoutes(selectedRoutes.filter(r => r.id !== route.id));
   };
 
+  const clearTrip = () => {
+    setTripTelemetryPath([]);
+    setActiveTripInfo(null);
+  };
+
   return (
     <PageContainer>
       <Sidebar isCollapsed={isSidebarCollapsed} />
@@ -570,6 +580,16 @@ const RealTimeTracking: React.FC = () => {
                   dashArray="5, 5"
                 />
               ))
+            )}
+
+            {/* Trip Telemetry Path */}
+            {tripTelemetryPath.length > 0 && (
+              <Polyline
+                positions={tripTelemetryPath}
+                color="#ff6b6b"
+                weight={5}
+                opacity={0.8}
+              />
             )}
 
             {/* Route Stop Markers */}
@@ -839,12 +859,92 @@ const RealTimeTracking: React.FC = () => {
                           {data?.tripStatus && <span>📍 {data.tripStatus.toUpperCase()}</span>}
                         </div>
                       </div>
-                      <button onClick={() => handleRemoveVehicle(fleet)}>✕</button>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedVehicleForHistory(fleet.id);
+                            setIsTripHistoryModalOpen(true);
+                          }}
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.15)',
+                            border: 'none',
+                            color: '#cbd5e1',
+                            cursor: 'pointer',
+                            padding: 0,
+                            width: '16px',
+                            height: '16px',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '10px',
+                            transition: 'all 0.2s ease',
+                            flexShrink: 0,
+                          }}
+                          onMouseEnter={(e) => {
+                            (e.target as HTMLElement).style.background = 'rgba(96, 165, 250, 0.6)';
+                            (e.target as HTMLElement).style.color = '#bfdbfe';
+                          }}
+                          onMouseLeave={(e) => {
+                            (e.target as HTMLElement).style.background = 'rgba(255, 255, 255, 0.15)';
+                            (e.target as HTMLElement).style.color = '#cbd5e1';
+                          }}
+                        >
+                          📜
+                        </button>
+                        <button onClick={() => handleRemoveVehicle(fleet)}>✕</button>
+                      </div>
                     </VehicleTag>
                   );
                 })
               )}
             </VehicleList>
+
+            {/* Active Trip Indicator */}
+            {activeTripInfo && (
+              <div style={{ display: 'flex', gap: '8px', marginTop: theme.spacing.md, flexWrap: 'wrap', alignItems: 'center' }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: 'linear-gradient(135deg, #1e40af, #0f172a)',
+                  color: '#e0f2fe',
+                  padding: '6px 10px',
+                  borderRadius: '4px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  border: '1px solid #1e40af',
+                  boxShadow: '0 2px 4px rgba(59, 130, 246, 0.2)',
+                }}>
+                  Path #1
+                </div>
+                <button
+                  onClick={clearTrip}
+                  style={{
+                    background: 'rgba(220, 38, 38, 0.2)',
+                    color: '#fca5a5',
+                    border: '1px solid rgba(220, 38, 38, 0.5)',
+                    borderRadius: '4px',
+                    padding: '4px 8px',
+                    fontSize: '10px',
+                    cursor: 'pointer',
+                    fontWeight: 500,
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.target as HTMLElement).style.background = '#dc2626';
+                    (e.target as HTMLElement).style.color = 'white';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.target as HTMLElement).style.background = 'rgba(220, 38, 38, 0.2)';
+                    (e.target as HTMLElement).style.color = '#fca5a5';
+                  }}
+                >
+                  ✕ Clear
+                </button>
+              </div>
+            )}
 
             {/* Routes Section */}
             <div style={{ marginTop: theme.spacing.lg, paddingTop: theme.spacing.lg, borderTop: `1px solid ${theme.colors.border}` }}>
@@ -915,6 +1015,28 @@ const RealTimeTracking: React.FC = () => {
           isOpen={isRoutesModalOpen}
           onClose={() => setIsRoutesModalOpen(false)}
           onRoutesSelected={handleRoutesSelected}
+        />
+
+        {/* Trip History Modal */}
+        <PathVisualizerModal
+          isOpen={isTripHistoryModalOpen}
+          vehicleId={selectedVehicleForHistory || undefined}
+          vehicleFleetNo={selectedVehicleForHistory ? selectedFleets.find(f => f.id === selectedVehicleForHistory)?.fleetNo : undefined}
+          onClose={() => setIsTripHistoryModalOpen(false)}
+          onPathSelected={(path) => {
+            console.log('path', path);
+            // Decode the polyline path
+            if (path && path.path.polyline) {
+              try {
+                const decodedPath = polyline.decode(path.path.polyline) as [number, number][];
+                console.log('decodedPath', decodedPath);
+                setTripTelemetryPath(decodedPath);
+                setActiveTripInfo(path.trip || path.timeRange);
+              } catch (error) {
+                console.error('Error decoding trip path:', error);
+              }
+            }
+          }}
         />
       </MainContent>
     </PageContainer>
