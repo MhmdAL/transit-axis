@@ -25,6 +25,7 @@ let TelemetryService = class TelemetryService {
     }
     async createTelemetry(telemetryData) {
         try {
+            console.log("telemetryServiceUrl", telemetryData);
             const response = await (0, rxjs_1.firstValueFrom)(this.httpService.post(`${this.telemetryServiceUrl}/api/telemetry`, telemetryData));
             return response.data;
         }

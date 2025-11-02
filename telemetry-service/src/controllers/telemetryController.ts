@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { PrismaClient } from '@prisma/client';
 import polyline from '@mapbox/polyline';
+import { liveTrackingService } from '../services/liveTrackingService';
 
 const prisma = new PrismaClient();
 
@@ -8,7 +9,8 @@ export const telemetryController = {
   // Create/Update telemetry (upsert to Telemetry, insert to TelemetryLog)
   async createTelemetry(req: Request, res: Response, next: NextFunction) {
     try {
-      const { vehicleId, tripId, latitude, longitude, speed, heading, altitude, accuracy, odometer, timestamp } = req.body;
+      const { vehicleId, tripId, routeId, driverId, latitude, longitude, 
+        speed, heading, altitude, accuracy, odometer, timestamp } = req.body;
 
       if (!vehicleId || latitude == null || longitude == null) {
         return res.status(400).json({
@@ -20,6 +22,8 @@ export const telemetryController = {
       const telemetryData = {
         vehicleId: parseInt(vehicleId),
         tripId: tripId != null ? parseInt(tripId) : null,
+        routeId: routeId != null ? parseInt(routeId) : null,
+        driverId: driverId != null ? driverId : null,
         latitude: parseFloat(latitude),
         longitude: parseFloat(longitude),
         speed: speed != null ? parseFloat(speed) : null,
@@ -43,6 +47,14 @@ export const telemetryController = {
           data: telemetryData
         })
       ]);
+
+      // Forward telemetry to live tracking API (fire and forget)
+      const liveTrackingTelemetry = liveTrackingService.convertToLiveTrackingFormat(vehicleId, telemetryData);
+
+      console.log("liveTrackingTelemetry", liveTrackingTelemetry);
+      liveTrackingService.forwardTelemetry(liveTrackingTelemetry).catch((error) => {
+        console.error('Error forwarding telemetry to live tracking:', error);
+      });
 
       return res.status(201).json({
         success: true,
@@ -181,6 +193,50 @@ export const telemetryController = {
             timestamp: log.timestamp
           }))
         }
+      });
+    } catch (error) {
+      return next(error);
+    }
+  },
+
+  // Get telemetry for multiple vehicles
+  async getMultipleVehiclesTelemetry(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { vehicleIds } = req.body;
+
+      if (!vehicleIds || !Array.isArray(vehicleIds) || vehicleIds.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'vehicleIds array is required and must not be empty'
+        });
+      }
+
+      // Fetch latest telemetry for each vehicle and return as a list
+      const telemetryList: any[] = [];
+
+      for (const vehicleId of vehicleIds) {
+        const telemetry = await prisma.telemetry.findUnique({
+          where: { vehicleId: parseInt(vehicleId) }
+        });
+
+        if (telemetry) {
+          telemetryList.push({
+            vehicleId: vehicleId.toString(),
+            tripId: telemetry.tripId,
+            routeId: telemetry.routeId,
+            driverId: telemetry.driverId,
+            latitude: telemetry.latitude,
+            longitude: telemetry.longitude,
+            speed: telemetry.speed || 0,
+            bearing: telemetry.heading || 0,
+            timestamp: telemetry.updatedAt.toISOString()
+          });
+        }
+      }
+
+      return res.json({
+        success: true,
+        data: telemetryList
       });
     } catch (error) {
       return next(error);

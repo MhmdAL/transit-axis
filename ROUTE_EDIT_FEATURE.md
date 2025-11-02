@@ -157,3 +157,4 @@ Load Route → Pre-populate form → handleSubmit() → dataService.updateRoute(
 - Add Stops button moved to map sidebar for better UX
 - Component maintains edit history in URL params for deep linking
 - All validation remains consistent between create and edit modes
+

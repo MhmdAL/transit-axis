@@ -19,5 +19,6 @@ export const config = {
     pass: process.env.SMTP_PASS || ''
   },
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3001',
+  telemetryServiceUrl: process.env.TELEMETRY_SERVICE_URL || 'http://telemetry-service:3003',
 };
 

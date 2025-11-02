@@ -5,6 +5,7 @@ const router = express.Router();
 
 router.post('/', telemetryController.createTelemetry);
 router.get('/', telemetryController.listTelemetry);
+router.post('/vehicles', telemetryController.getMultipleVehiclesTelemetry);
 router.get('/:vehicleId', telemetryController.getTelemetryByVehicle);
 router.get('/:vehicleId/logs', telemetryController.getTelemetryLogs);
 router.get('/:vehicleId/path', telemetryController.getTelemetryPath);

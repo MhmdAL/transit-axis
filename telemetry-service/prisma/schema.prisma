@@ -11,6 +11,8 @@ model Telemetry {
   id        Int      @id @default(autoincrement())
   vehicleId Int      @unique
   tripId    Int?
+  routeId   Int?
+  driverId  Int?
   latitude  Float
   longitude Float
   speed     Float?
@@ -29,6 +31,8 @@ model TelemetryLog {
   id        Int      @id @default(autoincrement())
   vehicleId Int
   tripId    Int?
+  routeId   Int?
+  driverId  Int?
   latitude  Float
   longitude Float
   speed     Float?

@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  moveo-cc-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: moveo-cc-api
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      SOCKET_IO_PORT: 3001
+      LOG_LEVEL: debug
+      BATCH_INTERVAL_MS: 1000
+      BATCH_MAX_SIZE: 100
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+

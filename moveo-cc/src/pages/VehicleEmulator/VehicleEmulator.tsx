@@ -282,10 +282,14 @@ const VehicleEmulator: React.FC = () => {
   const [tripStartTime, setTripStartTime] = useState<Date | null>(null);
   const [currentTripId, setCurrentTripId] = useState<string | null>(null);
   const [routeName, setRouteName] = useState('');
+  const [routeId, setRouteId] = useState<number | null>(null);
   
+  const driverId = 1;
+  const vehicleId = 1;
+
   // Telemetry state
-  const [currentLat, setCurrentLat] = useState(31.9454);
-  const [currentLon, setCurrentLon] = useState(35.9284);
+  const [currentLat, setCurrentLat] = useState(25.3548);
+  const [currentLon, setCurrentLon] = useState(51.1839);
   const [odometer, setOdometer] = useState(0);
 
   // Duties state
@@ -387,6 +391,7 @@ const VehicleEmulator: React.FC = () => {
         setTripStatus('active');
         setTripStartTime(new Date());
         setCurrentTripId(data.data.id);
+        setRouteId(data.data.routeId);
         setRouteName(data.data.route?.name || selectedRoute);
         setOdometer(1000); // Initialize odometer to 1000 km
       } else {
@@ -413,6 +418,7 @@ const VehicleEmulator: React.FC = () => {
       if (response.ok && data.success) {
         setTripStatus('idle');
         setTripStartTime(null);
+        setRouteId(null);
         setSelectedRoute('');
         setCurrentTripId(null);
         setRouteName('');
@@ -427,8 +433,8 @@ const VehicleEmulator: React.FC = () => {
 
   const sendTelemetry = async () => {
     // Generate random offset for coordinates (simulate movement)
-    const latOffset = (Math.random() - 0.5) * 0.001; // ~50-100m variation
-    const lonOffset = (Math.random() - 0.5) * 0.001;
+    const latOffset = (Math.random() - 0.5) * 0.01; // ~50-100m variation
+    const lonOffset = (Math.random() - 0.5) * 0.01;
     const newLat = currentLat + latOffset;
     const newLon = currentLon + lonOffset;
     
@@ -446,8 +452,10 @@ const VehicleEmulator: React.FC = () => {
     setOdometer(newOdometer);
 
     const telemetryData = {
-      vehicleId: 1, // Hardcoded to match trip
+      vehicleId: vehicleId, // Hardcoded to match trip
       tripId: currentTripId ? parseInt(currentTripId) : undefined,
+      routeId: routeId,
+      driverId: driverId,
       latitude: newLat,
       longitude: newLon,
       speed: currentSpeed,

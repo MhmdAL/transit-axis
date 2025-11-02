@@ -2,6 +2,8 @@ import { TelemetryService } from './telemetry.service';
 declare class TelemetryDto {
     vehicleId: number;
     tripId?: number;
+    routeId?: number;
+    driverId?: number;
     latitude: number;
     longitude: number;
     speed?: number;

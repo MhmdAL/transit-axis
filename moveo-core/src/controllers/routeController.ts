@@ -6,13 +6,29 @@ const prisma = new PrismaClient();
 export const routeController = {
   async getAllRoutes(req: Request, res: Response, next: NextFunction) {
     try {
+      const { search, limit = 50, offset = 0 } = req.query;
+      
+      // Build filter conditions
+      const where: any = {};
+      
+      if (search && typeof search === 'string' && search.trim()) {
+        const searchTerm = search.trim();
+        where.OR = [
+          { name: { contains: searchTerm, mode: 'insensitive' } },
+          { code: { contains: searchTerm, mode: 'insensitive' } }
+        ];
+      }
+
       const routes = await prisma.route.findMany({
+        where,
         include: {
           routeStops: {
             include: { stop: { include: { location: true } } },
             orderBy: { stopOrder: 'asc' }
           }
-        }
+        },
+        take: parseInt(limit as string) || 50,
+        skip: parseInt(offset as string) || 0
       });
 
       res.json({

@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MoveoCC-API Socket.IO Demo</title>
+  <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .panel {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    h2 {
+      margin-bottom: 16px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ccc;
+      margin-right: 8px;
+    }
+
+    .status.connected {
+      background: #10b981;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+      color: #555;
+      font-size: 14px;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    select:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    button {
+      padding: 10px 16px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s;
+    }
+
+    button:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.secondary {
+      background: #6b7280;
+    }
+
+    button.secondary:hover {
+      background: #565f7a;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .button-group button {
+      flex: 1;
+    }
+
+    .log {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 12px;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+      color: #333;
+      line-height: 1.4;
+    }
+
+    .log-entry {
+      padding: 4px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .log-entry:last-child {
+      border-bottom: none;
+    }
+
+    .log-entry.info {
+      color: #3b82f6;
+    }
+
+    .log-entry.success {
+      color: #10b981;
+    }
+
+    .log-entry.error {
+      color: #ef4444;
+    }
+
+    .log-entry.warning {
+      color: #f59e0b;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .stat {
+      background: #f9fafb;
+      padding: 12px;
+      border-radius: 6px;
+      border-left: 3px solid #667eea;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .vehicle-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .vehicle-item {
+      background: #f9fafb;
+      padding: 12px;
+      border-radius: 6px;
+      border-left: 3px solid #10b981;
+      font-size: 12px;
+    }
+
+    .vehicle-item.vehicle-1 { border-left-color: #3b82f6; }
+    .vehicle-item.vehicle-2 { border-left-color: #10b981; }
+    .vehicle-item.vehicle-3 { border-left-color: #f59e0b; }
+    .vehicle-item.vehicle-4 { border-left-color: #8b5cf6; }
+
+    .vehicle-id {
+      font-weight: bold;
+      color: #333;
+    }
+
+    .vehicle-data {
+      color: #6b7280;
+      margin-top: 4px;
+      font-size: 11px;
+    }
+
+    code {
+      background: #f3f4f6;
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: #d97706;
+      font-size: 12px;
+    }
+
+    .title {
+      text-align: center;
+      color: white;
+      margin-bottom: 30px;
+    }
+
+    .title h1 {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .title p {
+      font-size: 16px;
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <div class="title">
+    <h1>🚗 MoveoCC-API Socket.IO Demo</h1>
+    <p>Real-time Vehicle Live Tracking</p>
+  </div>
+
+  <div class="container">
+    <!-- Connection Panel -->
+    <div class="panel">
+      <h2>
+        <span class="status" id="connectionStatus"></span>
+        Connection
+      </h2>
+
+      <div class="form-group">
+        <label>Server URL</label>
+        <input
+          type="text"
+          id="serverUrl"
+          value="http://localhost:3004"
+          placeholder="http://localhost:3004"
+        >
+      </div>
+
+      <div class="button-group">
+        <button onclick="connectSocket()">Connect</button>
+        <button class="secondary" onclick="disconnectSocket()">Disconnect</button>
+      </div>
+
+      <hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;">
+
+      <h3 style="margin-bottom: 12px; font-size: 16px; color: #333;">Subscribe to Vehicle</h3>
+
+      <div class="form-group">
+        <label>Vehicle ID</label>
+        <input
+          type="text"
+          id="vehicleId"
+          placeholder="e.g., truck_001"
+          value="truck_001"
+        >
+      </div>
+
+      <div class="button-group">
+        <button onclick="subscribeVehicle()">Subscribe</button>
+        <button class="secondary" onclick="unsubscribeVehicle()">Unsubscribe</button>
+      </div>
+
+      <hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;">
+
+      <h3 style="margin-bottom: 12px; font-size: 16px; color: #333;">Send Telemetry (Test)</h3>
+
+      <div class="form-group">
+        <label>Fleet Number</label>
+        <input type="text" id="fleetNumber" placeholder="e.g., fleet_001" value="fleet_001">
+      </div>
+
+      <div class="form-group">
+        <label>Latitude</label>
+        <input type="number" id="lat" placeholder="40.7128" value="40.7128" step="0.0001">
+      </div>
+
+      <div class="form-group">
+        <label>Longitude</label>
+        <input type="number" id="lon" placeholder="-74.0060" value="-74.0060" step="0.0001">
+      </div>
+
+      <div class="form-group">
+        <label>Speed (km/h)</label>
+        <input type="number" id="speed" placeholder="55" value="55" min="0" step="0.1">
+      </div>
+
+      <div class="form-group">
+        <label>Bearing (degrees)</label>
+        <input type="number" id="bearing" placeholder="270" value="270" min="0" max="360" step="1">
+      </div>
+
+      <button onclick="sendTelemetry()" style="width: 100%;">📍 Send Telemetry</button>
+
+      <hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;">
+
+      <button onclick="getStats()" style="width: 100%;">📊 Get Server Stats</button>
+    </div>
+
+    <!-- Events & Data Panel -->
+    <div class="panel">
+      <h2>📡 Events & Data</h2>
+
+      <div class="log" id="log"></div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Connected</div>
+          <div class="stat-value" id="statConnected">No</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Batches Received</div>
+          <div class="stat-value" id="statBatches">0</div>
+        </div>
+      </div>
+
+      <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 16px; color: #333;">Subscriptions</h3>
+      <div class="vehicle-list" id="subscriptionList"></div>
+
+      <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 16px; color: #333;">Latest Batch Data</h3>
+      <div class="vehicle-list" id="batchList"></div>
+    </div>
+  </div>
+
+  <script>
+    let socket = null;
+    let isConnected = false;
+    let batchCount = 0;
+    let subscriptions = new Set();
+    let latestBatch = null;
+
+    const log = (message, type = 'info') => {
+      const logEl = document.getElementById('log');
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      const time = new Date().toLocaleTimeString();
+      entry.textContent = `[${time}] ${message}`;
+      logEl.insertBefore(entry, logEl.firstChild);
+
+      // Keep only last 50 entries
+      while (logEl.children.length > 50) {
+        logEl.removeChild(logEl.lastChild);
+      }
+    };
+
+    const updateConnectionStatus = () => {
+      const status = document.getElementById('connectionStatus');
+      const connected = document.getElementById('statConnected');
+
+      if (isConnected) {
+        status.classList.add('connected');
+        connected.textContent = 'Yes ✓';
+        log('Connected to MoveoCC-API', 'success');
+      } else {
+        status.classList.remove('connected');
+        connected.textContent = 'No ✗';
+        log('Disconnected from MoveoCC-API', 'error');
+      }
+    };
+
+    const connectSocket = () => {
+      if (isConnected) {
+        log('Already connected', 'warning');
+        return;
+      }
+
+      const serverUrl = document.getElementById('serverUrl').value;
+
+      socket = io(serverUrl);
+
+      socket.on('connect', () => {
+        isConnected = true;
+        updateConnectionStatus();
+      });
+
+      socket.on('disconnect', () => {
+        isConnected = false;
+        updateConnectionStatus();
+      });
+
+      socket.on('subscription:confirmed', (data) => {
+        subscriptions.add(data.vehicleId);
+        updateSubscriptionList();
+        log(`✓ Subscribed to ${data.vehicleId}`, 'success');
+      });
+
+      socket.on('subscription:removed', (data) => {
+        subscriptions.delete(data.vehicleId);
+        updateSubscriptionList();
+        log(`✗ Unsubscribed from ${data.vehicleId}`, 'warning');
+      });
+
+      socket.on('vehicle:telemetry:batch', (batch) => {
+        batchCount++;
+        latestBatch = batch;
+        document.getElementById('statBatches').textContent = batchCount;
+
+        log(`📦 Batch ${batch.batchId} with ${batch.count} vehicles`, 'info');
+        updateBatchList(batch);
+      });
+
+      socket.on('error', (error) => {
+        log(`❌ Error: ${error.message}`, 'error');
+      });
+
+      socket.on('connect_error', (error) => {
+        log(`Connection error: ${error.message}`, 'error');
+      });
+    };
+
+    const disconnectSocket = () => {
+      if (socket) {
+        socket.disconnect();
+        isConnected = false;
+        updateConnectionStatus();
+        subscriptions.clear();
+        updateSubscriptionList();
+      }
+    };
+
+    const subscribeVehicle = () => {
+      if (!isConnected) {
+        log('Not connected to server', 'error');
+        return;
+      }
+
+      const vehicleId = document.getElementById('vehicleId').value;
+      if (!vehicleId) {
+        log('Please enter a vehicle ID', 'error');
+        return;
+      }
+
+      socket.emit('subscribe:vehicle', { vehicleId }, (response) => {
+        if (response.success) {
+          log(`Subscribing to ${vehicleId}...`, 'info');
+        } else {
+          log(`Failed to subscribe: ${response.error}`, 'error');
+        }
+      });
+    };
+
+    const unsubscribeVehicle = () => {
+      if (!isConnected) {
+        log('Not connected to server', 'error');
+        return;
+      }
+
+      const vehicleId = document.getElementById('vehicleId').value;
+      if (!vehicleId) {
+        log('Please enter a vehicle ID', 'error');
+        return;
+      }
+
+      socket.emit('unsubscribe:vehicle', { vehicleId }, (response) => {
+        if (response.success) {
+          log(`Unsubscribing from ${vehicleId}...`, 'info');
+        } else {
+          log(`Failed to unsubscribe: ${response.error}`, 'error');
+        }
+      });
+    };
+
+    const sendTelemetry = () => {
+      if (!isConnected) {
+        log('Not connected to server', 'error');
+        return;
+      }
+
+      const vehicleId = document.getElementById('vehicleId').value;
+      const fleetNumber = document.getElementById('fleetNumber').value;
+      const lat = parseFloat(document.getElementById('lat').value);
+      const lon = parseFloat(document.getElementById('lon').value);
+      const speed = parseFloat(document.getElementById('speed').value);
+      const bearing = parseFloat(document.getElementById('bearing').value);
+
+      if (!vehicleId || !fleetNumber || isNaN(lat) || isNaN(lon) || isNaN(speed) || isNaN(bearing)) {
+        log('Please fill in all fields', 'error');
+        return;
+      }
+
+      socket.emit('vehicle:telemetry', {
+        vehicleId,
+        fleetNumber,
+        timestamp: Date.now(),
+        latitude: lat,
+        longitude: lon,
+        speed,
+        bearing,
+      });
+
+      log(`📍 Sent telemetry for ${vehicleId} (${fleetNumber})`, 'success');
+    };
+
+    const getStats = () => {
+      if (!isConnected) {
+        log('Not connected to server', 'error');
+        return;
+      }
+
+      socket.emit('request:stats', {}, (stats) => {
+        log(`📊 Server Stats:`, 'info');
+        log(`  Connected Clients: ${stats.connectedClients}`, 'info');
+        log(`  Active Vehicles: ${stats.activeVehicles}`, 'info');
+        log(`  Total Subscriptions: ${stats.totalSubscriptions}`, 'info');
+        log(`  Batches: ${stats.telemetryBatches.total}`, 'info');
+        log(`  Uptime: ${(stats.uptime / 60).toFixed(2)} minutes`, 'info');
+      });
+    };
+
+    const updateSubscriptionList = () => {
+      const list = document.getElementById('subscriptionList');
+      if (subscriptions.size === 0) {
+        list.innerHTML = '<div style="color: #999; padding: 12px; text-align: center;">No subscriptions yet</div>';
+        return;
+      }
+
+      list.innerHTML = Array.from(subscriptions)
+        .map(
+          (id, idx) =>
+            `<div class="vehicle-item vehicle-${(idx % 4) + 1}">
+              <div class="vehicle-id">🚗 ${id}</div>
+            </div>`
+        )
+        .join('');
+    };
+
+    const updateBatchList = (batch) => {
+      const list = document.getElementById('batchList');
+      if (!batch || batch.count === 0) {
+        list.innerHTML = '<div style="color: #999; padding: 12px; text-align: center;">Waiting for telemetry...</div>';
+        return;
+      }
+
+      list.innerHTML = batch.dataPoints
+        .map(
+          (point, idx) =>
+            `<div class="vehicle-item vehicle-${(idx % 4) + 1}">
+              <div class="vehicle-id">🚗 ${point.vehicleId}</div>
+              <div class="vehicle-data">
+                📍 ${point.latitude.toFixed(4)}, ${point.longitude.toFixed(4)}<br>
+                💨 ${point.speed.toFixed(1)} km/h | 🧭 ${point.bearing.toFixed(0)}°<br>
+                <code>${new Date(point.timestamp).toLocaleTimeString()}</code>
+              </div>
+            </div>`
+        )
+        .join('');
+    };
+
+    // Initialize
+    window.addEventListener('load', () => {
+      updateConnectionStatus();
+      updateSubscriptionList();
+      updateBatchList(null);
+    });
+  </script>
+</body>
+</html>

@@ -110,6 +110,41 @@ services:
       - /app/node_modules
     command: sh -c "npm install && npm run start:dev"
 
+  # MoveoCC-API (Real-time Vehicle Live Tracking)
+  moveo-cc-api:
+    build:
+      context: ./moveo-cc-api
+      dockerfile: Dockerfile
+    container_name: moveo-cc-api
+    ports:
+      - "3004:3004"
+    environment:
+      - NODE_ENV=development
+      - PORT=3004
+      - SOCKET_IO_PORT=3004
+      - LOG_LEVEL=debug
+      - BATCH_INTERVAL_MS=1000
+      - BATCH_MAX_SIZE=100
+      - SOCKET_IO_PING_INTERVAL=25000
+      - SOCKET_IO_PING_TIMEOUT=60000
+      - SOCKET_IO_MAX_HTTP_BUFFER_SIZE=1000000
+      - MOVEO_CORE_BASE_URL=http://moveo-core:3000
+    depends_on:
+      - moveo-core
+    networks:
+      - moveo-network
+    volumes:
+      - ./moveo-cc-api:/app
+      - /app/node_modules
+    command: npm run dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
 volumes:
   moveo_postgres_data:
   telemetry_postgres_data:

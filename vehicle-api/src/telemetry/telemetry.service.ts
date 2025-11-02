@@ -16,6 +16,7 @@ export class TelemetryService {
 
   async createTelemetry(telemetryData: any) {
     try {
+      console.log("telemetryServiceUrl", telemetryData);
       const response = await firstValueFrom(
         this.httpService.post(`${this.telemetryServiceUrl}/api/telemetry`, telemetryData),
       );

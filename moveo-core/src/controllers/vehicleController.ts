@@ -6,14 +6,26 @@ const prisma = new PrismaClient();
 export const vehicleController = {
   async getAllVehicles(req: Request, res: Response, next: NextFunction) {
     try {
+      const { search, limit = 50, offset = 0 } = req.query;
+      
+      // Build filter conditions
+      const where: any = {};
+      
+      if (search && typeof search === 'string' && search.trim()) {
+        const searchTerm = search.trim();
+        where.OR = [
+          { fleetNo: { contains: searchTerm, mode: 'insensitive' } },
+          { plateNo: { contains: searchTerm, mode: 'insensitive' } }
+        ];
+      }
+
       const vehicles = await prisma.vehicle.findMany({
+        where,
         include: {
-          model: true,
-          telemetry: {
-            orderBy: { trackedOn: 'desc' },
-            take: 1
-          }
-        }
+          model: true
+        },
+        take: parseInt(limit as string) || 50,
+        skip: parseInt(offset as string) || 0
       });
 
       res.json({
@@ -31,11 +43,7 @@ export const vehicleController = {
       const vehicle = await prisma.vehicle.findUnique({
         where: { id: BigInt(id) },
         include: {
-          model: true,
-          telemetry: {
-            orderBy: { trackedOn: 'desc' },
-            take: 1
-          }
+          model: true
         }
       });
 
@@ -111,58 +119,6 @@ export const vehicleController = {
       res.json({
         success: true,
         message: 'Vehicle deleted successfully'
-      });
-    } catch (error) {
-      return next(error);
-    }
-  },
-
-  async getVehicleLocation(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      
-      const latestTelemetry = await prisma.vehicleTelemetry.findFirst({
-        where: { vehicleId: BigInt(id) },
-        orderBy: { trackedOn: 'desc' }
-      });
-
-      if (!latestTelemetry) {
-        return res.status(404).json({
-          success: false,
-          message: 'No location data found'
-        });
-      }
-
-      res.json({
-        success: true,
-        data: {
-          lat: latestTelemetry.lat,
-          lon: latestTelemetry.lon,
-          speed: latestTelemetry.speed,
-          ignition: latestTelemetry.ignition,
-          trackedOn: latestTelemetry.trackedOn
-        }
-      });
-    } catch (error) {
-      return next(error);
-    }
-  },
-
-  async getVehicleTelemetry(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const { limit = 100, offset = 0 } = req.query;
-
-      const telemetry = await prisma.vehicleTelemetry.findMany({
-        where: { vehicleId: BigInt(id) },
-        orderBy: { trackedOn: 'desc' },
-        take: parseInt(limit as string),
-        skip: parseInt(offset as string)
-      });
-
-      res.json({
-        success: true,
-        data: telemetry
       });
     } catch (error) {
       return next(error);

@@ -18,6 +18,8 @@ const telemetry_service_1 = require("./telemetry.service");
 class TelemetryDto {
     vehicleId;
     tripId;
+    routeId;
+    driverId;
     latitude;
     longitude;
     speed;

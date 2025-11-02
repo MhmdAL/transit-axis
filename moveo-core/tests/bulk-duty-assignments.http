@@ -27,3 +27,4 @@ GET http://localhost:3000/api/duties
 Authorization: Bearer YOUR_TOKEN_HERE
 
 
+
