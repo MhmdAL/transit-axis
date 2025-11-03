@@ -172,6 +172,8 @@ model Trip {
   endLocation         BigInt?
   driverId            BigInt
   vehicleId           BigInt
+  tripDutyId          BigInt?
+  tripDuty            TripDuty? @relation(fields: [tripDutyId], references: [id])
   averageSpeed        Decimal? @db.Decimal(5, 2) // km/h
   maxSpeed            Decimal? @db.Decimal(5, 2) // km/h
   totalDistance       Decimal? @db.Decimal(10, 2) // km
@@ -338,6 +340,7 @@ model TripDuty {
   route Route @relation(fields: [routeId], references: [id])
 
   @@map("trip_duty")
+  Trip Trip[]
 }
 
 model WashingDuty {

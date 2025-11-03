@@ -22,6 +22,10 @@ export const dutyController = {
           lte: endOfDay
         };
       }
+
+      console.log(driverId);
+      console.log(startDate);
+      console.log(endDate);
       
       // Handle date range filter (startDate and endDate)
       if (startDate && endDate) {

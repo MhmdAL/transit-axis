@@ -17,6 +17,7 @@ export class DutiesController {
     @Query('driverId') driverId: string,
     @Query('vehicleId') vehicleId: string,
     @Query('dutyType') dutyType?: string,
+    @Query('date') date?: string,
     @Headers('authorization') authHeader?: string,
   ) {
     try {
@@ -29,7 +30,7 @@ export class DutiesController {
       }
 
       const token = authHeader.replace('Bearer ', '');
-      const result = await this.dutiesService.getDuties(driverId, vehicleId, dutyType, token);
+      const result = await this.dutiesService.getDuties(driverId, vehicleId, dutyType, date, token);
       return result;
     } catch (error) {
       throw new HttpException(

@@ -68,6 +68,22 @@ export interface ServerStats {
 }
 
 /**
+ * Trip Event Types
+ * Represents trip start/end events
+ */
+export interface TripEvent {
+  id: string; // Trip ID
+  routeId: string;
+  vehicleId: string;
+  driverId: string;
+  eventType: 'trip:start' | 'trip:end';
+  timestamp: number; // milliseconds since epoch
+  startTime?: string; // ISO string
+  endTime?: string; // ISO string
+  status?: string;
+}
+
+/**
  * Socket Event Payloads
  */
 export namespace SocketEvents {
@@ -78,6 +94,15 @@ export namespace SocketEvents {
 
   export interface UnsubscribeVehiclePayload {
     vehicleId: string;
+  }
+
+  // Route subscription
+  export interface SubscribeRoutePayload {
+    routeId: string;
+  }
+
+  export interface UnsubscribeRoutePayload {
+    routeId: string;
   }
 
   // Vehicle telemetry
@@ -91,6 +116,9 @@ export namespace SocketEvents {
     count: number;
   }
 
+  // Trip events
+  export interface TripEventPayload extends TripEvent {}
+
   // Subscription confirmations
   export interface SubscriptionConfirmedPayload {
     vehicleId: string;
@@ -99,6 +127,15 @@ export namespace SocketEvents {
 
   export interface SubscriptionRemovedPayload {
     vehicleId: string;
+  }
+
+  export interface RouteSubscriptionConfirmedPayload {
+    routeId: string;
+    subscribedAt: number;
+  }
+
+  export interface RouteSubscriptionRemovedPayload {
+    routeId: string;
   }
 
   // Error handling

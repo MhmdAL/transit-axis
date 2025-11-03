@@ -11,9 +11,12 @@ router.post('/', authMiddleware, tripController.createTrip);
 router.put('/:id', authMiddleware, tripController.updateTrip);
 router.delete('/:id', authMiddleware, tripController.deleteTrip);
 
+// Trip duties - must come before :id routes
+router.get('/duties/by-date-routes', authMiddleware, tripController.getTripDutiesByDateAndRoutes);
+
 // Trip operations
 router.post('/:id/start', authMiddleware, tripController.startTrip);
-router.patch('/:id/end', authMiddleware, tripController.endTrip);
+router.post('/:id/end', authMiddleware, tripController.endTrip);
 router.get('/:id/stops', authMiddleware, tripController.getTripStops);
 router.put('/:id/stops/:stopId/arrive', authMiddleware, tripController.arriveAtStop);
 router.put('/:id/stops/:stopId/depart', authMiddleware, tripController.departFromStop);

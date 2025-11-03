@@ -14,6 +14,9 @@ const common_1 = require("@nestjs/common");
 const axios_1 = require("@nestjs/axios");
 const config_1 = require("@nestjs/config");
 const rxjs_1 = require("rxjs");
+class EndTripDto {
+    timestamp;
+}
 let TripsService = class TripsService {
     httpService;
     configService;
@@ -36,9 +39,9 @@ let TripsService = class TripsService {
             throw new Error(error.response?.data?.message || 'Failed to start trip in moveo-core');
         }
     }
-    async endTrip(tripId, authToken) {
+    async endTrip(tripId, endTripDto, authToken) {
         try {
-            const response = await (0, rxjs_1.firstValueFrom)(this.httpService.patch(`${this.moveoCore}/api/trips/${tripId}/end`, {}, {
+            const response = await (0, rxjs_1.firstValueFrom)(this.httpService.post(`${this.moveoCore}/api/trips/${tripId}/end`, endTripDto, {
                 headers: {
                     Authorization: `Bearer ${authToken}`,
                 },

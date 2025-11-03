@@ -14,7 +14,11 @@ class StartTripDto {
   routeId: string;
   vehicleId: string;
   driverId: string;
-  scheduledDepartureTime: string;
+  timestamp: string;
+}
+
+class EndTripDto {
+  timestamp: string;
 }
 
 @Controller('trips')
@@ -42,9 +46,10 @@ export class TripsController {
     }
   }
 
-  @Patch(':id/end')
+  @Post(':id/end')
   async endTrip(
     @Param('id') tripId: string,
+    @Body() endTripDto: EndTripDto,
     @Headers('authorization') authHeader: string,
   ) {
     try {
@@ -53,7 +58,7 @@ export class TripsController {
       }
       
       const token = authHeader.replace('Bearer ', '');
-      const result = await this.tripsService.endTrip(tripId, token);
+      const result = await this.tripsService.endTrip(tripId, endTripDto, token);
       return result;
     } catch (error) {
       throw new HttpException(

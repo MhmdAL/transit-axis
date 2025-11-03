@@ -3,6 +3,10 @@ import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 
+class EndTripDto {
+  timestamp: string;
+}
+
 @Injectable()
 export class TripsService {
   private moveoCore: string;
@@ -31,12 +35,12 @@ export class TripsService {
     }
   }
 
-  async endTrip(tripId: string, authToken: string) {
+  async endTrip(tripId: string, endTripDto: EndTripDto, authToken: string) {
     try {
       const response = await firstValueFrom(
-        this.httpService.patch(
+        this.httpService.post(
           `${this.moveoCore}/api/trips/${tripId}/end`,
-          {},
+          endTripDto,
           {
             headers: {
               Authorization: `Bearer ${authToken}`,

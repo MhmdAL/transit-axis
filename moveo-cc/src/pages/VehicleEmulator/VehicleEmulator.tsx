@@ -285,7 +285,6 @@ const VehicleEmulator: React.FC = () => {
   const [routeId, setRouteId] = useState<number | null>(null);
   
   const driverId = 1;
-  const vehicleId = 1;
 
   // Telemetry state
   const [currentLat, setCurrentLat] = useState(25.3548);
@@ -296,6 +295,9 @@ const VehicleEmulator: React.FC = () => {
   const [duties, setDuties] = useState<any[]>([]);
   const [selectedDuty, setSelectedDuty] = useState<any>(null);
   const [isLoadingDuties, setIsLoadingDuties] = useState(false);
+  const [dutiesDate, setDutiesDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [dutiesVehicleId, setDutiesVehicleId] = useState<string>('1');
+  const [customTime, setCustomTime] = useState<string>('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -328,11 +330,22 @@ const VehicleEmulator: React.FC = () => {
     }
   };
 
-  const fetchDuties = async (token: string) => {
+  const fetchDuties = async (token: string, date?: string, vehicleId?: string) => {
     setIsLoadingDuties(true);
     try {
-      // Fetch duties for hardcoded driver=1 and vehicle=1 via vehicle-api
-      const response = await fetch('http://localhost:3002/duties?driverId=1&vehicleId=1&dutyType=TRIP', {
+      // Use provided date/vehicleId or fallback to state
+      const dateToUse = date || dutiesDate;
+      const vehicleIdToUse = vehicleId || dutiesVehicleId;
+      
+      // Use URLSearchParams for cleaner query parameter handling
+      const params = new URLSearchParams({
+        driverId: '1',
+        vehicleId: vehicleIdToUse,
+        dutyType: 'TRIP',
+        date: dateToUse
+      });
+      
+      const response = await fetch(`http://localhost:3002/duties?${params.toString()}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -371,6 +384,14 @@ const VehicleEmulator: React.FC = () => {
     }
 
     try {
+      // Use custom time if provided, otherwise use current time
+      let startTime = new Date();
+      if (customTime) {
+        const [hours, minutes] = customTime.split(':');
+        startTime = new Date(dutiesDate);
+        startTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      }
+
       const response = await fetch('http://localhost:3002/trips/start', {
         method: 'POST',
         headers: {
@@ -381,7 +402,8 @@ const VehicleEmulator: React.FC = () => {
           routeId: tripDuty.routeId,
           vehicleId: selectedDuty.vehicleId,
           driverId: selectedDuty.driverId,
-          scheduledDepartureTime: new Date().toISOString(),
+          tripDutyId: tripDuty.id,
+          timestamp: startTime.toISOString(),
         }),
       });
 
@@ -389,7 +411,7 @@ const VehicleEmulator: React.FC = () => {
 
       if (response.ok && data.success) {
         setTripStatus('active');
-        setTripStartTime(new Date());
+        setTripStartTime(startTime);
         setCurrentTripId(data.data.id);
         setRouteId(data.data.routeId);
         setRouteName(data.data.route?.name || selectedRoute);
@@ -406,11 +428,24 @@ const VehicleEmulator: React.FC = () => {
     if (!currentTripId) return;
 
     try {
+      // Calculate end time
+      let endTime = new Date();
+      if (customTime) {
+        const [hours, minutes] = customTime.split(':');
+        endTime = new Date(dutiesDate);
+        endTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      }
+
       const response = await fetch(`http://localhost:3002/trips/${currentTripId}/end`, {
-        method: 'PATCH',
+        method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`,
         },
+        body: JSON.stringify({
+          endTime: endTime.toISOString(),
+          timestamp: endTime.toISOString(),
+        }),
       });
 
       const data = await response.json();
@@ -423,6 +458,7 @@ const VehicleEmulator: React.FC = () => {
         setCurrentTripId(null);
         setRouteName('');
         setOdometer(0); // Reset odometer
+        setCustomTime(''); // Clear time picker
       } else {
         alert(data.message || 'Failed to end trip');
       }
@@ -452,7 +488,7 @@ const VehicleEmulator: React.FC = () => {
     setOdometer(newOdometer);
 
     const telemetryData = {
-      vehicleId: vehicleId, // Hardcoded to match trip
+      vehicleId: dutiesVehicleId, // Hardcoded to match trip
       tripId: currentTripId ? parseInt(currentTripId) : undefined,
       routeId: routeId,
       driverId: driverId,
@@ -657,6 +693,15 @@ const VehicleEmulator: React.FC = () => {
                   </DutiesList>
                 </Section>
               )}
+              <Section>
+                <Label>Trip Time</Label>
+                <Input
+                  type="time"
+                  value={customTime}
+                  onChange={(e) => setCustomTime(e.target.value)}
+                  placeholder="HH:MM"
+                />
+              </Section>
               <Button 
                 $variant="primary" 
                 onClick={handleStartTrip}
@@ -664,14 +709,56 @@ const VehicleEmulator: React.FC = () => {
               >
                 Start Trip
               </Button>
+              <div style={{ marginBottom: theme.spacing.md, display: 'flex', gap: theme.spacing.md }}>
+                    <div style={{ flex: 1 }}>
+                      <Input
+                        id="duties-date"
+                        type="date"
+                        value={dutiesDate}
+                        onChange={(e) => setDutiesDate(e.target.value)}
+                      />
+                    </div>
+                    <div style={{ flex: 0.5 }}>
+                      <Input
+                        id="duties-vehicle-id"
+                        type="number"
+                        placeholder="Vehicle ID"
+                        value={dutiesVehicleId}
+                        onChange={(e) => setDutiesVehicleId(e.target.value)}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                      <Button
+                        $variant="primary"
+                        onClick={() => fetchDuties(authToken, dutiesDate, dutiesVehicleId)}
+                        disabled={isLoadingDuties}
+                        style={{ width: 'auto', padding: `${theme.spacing.md} ${theme.spacing.lg}` }}
+                      >
+                        {isLoadingDuties ? '...' : 'Go'}
+                      </Button>
+                    </div>
+                  </div>
+
             </>
           ) : (
-            <Button 
+            <Section>
+            <Label>Trip Time</Label>
+            <Input
+              type="time"
+              value={customTime}
+              onChange={(e) => setCustomTime(e.target.value)}
+              placeholder="HH:MM"
+            />
+
+<Button 
               $variant="danger" 
               onClick={handleEndTrip}
             >
               End Trip
             </Button>
+
+          </Section>
+
           )}
         </EmulatorCard>
       </MainContent>

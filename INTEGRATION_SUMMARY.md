@@ -1,186 +1,158 @@
-# Backend Integration Summary
+# Trip Monitoring - Real-Time Integration Summary
 
-## What Was Implemented
+## Overview
+The Trip Monitoring page has been fully integrated with the real-time trip event system. The implementation includes:
+- Backend trip event emission in `tripController.ts`
+- Route subscription management in `moveo-cc-api`
+- Real-time listener setup in `TripMonitoring.tsx`
 
-### Overview
-Successfully integrated the `moveo-cc` frontend multi-select vehicle dropdown with the `moveo-core` backend API. Users can now search and subscribe to ANY vehicle in the system, not just those currently sending telemetry.
+## Components Modified
 
-## Files Created
+### 1. **Backend: `moveo-core/src/controllers/tripController.ts`**
+- **New Helper Function**: `sendTripEvent(eventType, tripData)`
+  - Sends trip events to `moveo-cc-api` at `/api/trip-events`
+  - Handles both `trip:start` and `trip:end` event types
+  - Includes error handling (doesn't fail the trip operation if event sending fails)
 
-### 1. **API Service** (`moveo-cc/src/services/apiService.ts`)
-- Simple HTTP client for backend communication
-- Handles vehicle API calls to `moveo-core`
-- Features:
-  - Generic request handling with timeout
-  - Automatic error handling
-  - Support for paginated/non-paginated responses
-  - Vehicle search and retrieval methods
+- **Modified `createTrip` Method**
+  - After successful trip creation, sends a `trip:start` event
+  - Event includes: tripId, routeId, vehicleId, driverId, timestamp, startTime, status
 
-## Files Modified
+- **Modified `endTrip` Method**
+  - After successful trip completion, sends a `trip:end` event
+  - Event includes: tripId, routeId, endTime, status (marked as 'completed')
 
-### 1. **RealTimeTracking Page** (`moveo-cc/src/pages/Tracking/RealTimeTracking.tsx`)
-- Updated `handleVehicleSearch()` to directly call `apiService.searchVehicles()`
-- Passes search term to backend when dropdown search changes
-- Simple error handling with empty result fallback
+### 2. **Frontend: `moveo-cc/src/pages/TripMonitoring/TripMonitoring.tsx`**
 
-## Architecture
-
-### Simple Data Flow
-```
-User Types Vehicle Name
-    ↓ (debounced 300ms in dropdown)
-RealTimeTracking.handleVehicleSearch()
-    ↓
-apiService.searchVehicles(searchTerm)
-    ↓
-GET /api/vehicles?search=...
-    ↓
-Backend Returns Vehicle Array
-    ↓
-Extract vehicle IDs
-    ↓
-Display in dropdown
-    ↓
-User selects vehicles
-    ↓
-Socket.IO subscriptions
-    ↓
-Real-time telemetry streaming
+#### New Imports
+```typescript
+import { useGlobalVehicleTracking } from '../../context/VehicleTrackingContext';
 ```
 
-## Configuration Required
+#### New Features
 
-### Environment Variables
-Create `.env` in `moveo-cc/`:
+1. **Global Vehicle Tracking Integration**
+   - Uses `useGlobalVehicleTracking()` hook to access the global Socket.IO connection
+   - Provides `subscribeVehicle` and `unsubscribeVehicle` methods
+
+2. **Route Subscription (Effect #2)**
+   - Subscribes to each selected route using `subscribeVehicle(`route:${route.id}`)`
+   - Automatically unsubscribes when routes change or component unmounts
+   - Ensures real-time events are received for selected routes only
+
+3. **Trip Event Listener (Effect #3)**
+   - Prepared structure for listening to `trip:start` and `trip:end` events
+   - Currently includes TODOs with the event handling logic
+   - Ready for Socket.IO listener connection once broadcasting is confirmed
+
+## Data Flow
+
+### Trip Start Event Flow
+```
+1. tripController.createTrip() creates a new trip
+2. sendTripEvent('trip:start', tripData) sends event to moveo-cc-api
+3. moveo-cc-api broadcasts to all clients subscribed to that route
+4. TripMonitoring.tsx receives event and updates local trips state
+5. UI updates to show new actual trip in the "Actual" timeline
+```
+
+### Trip End Event Flow
+```
+1. tripController.endTrip() updates trip with endTime
+2. sendTripEvent('trip:end', tripData) sends event to moveo-cc-api
+3. moveo-cc-api broadcasts to all clients subscribed to that route
+4. TripMonitoring.tsx receives event and updates trip status to 'completed'
+5. UI updates to show completed trip in the "Actual" timeline
+```
+
+## Environment Configuration
+
+Ensure the following environment variables are set:
+
+### In `moveo-core` (.env)
 ```env
-VITE_VEHICLE_TRACKING_URL=http://localhost:3004
-VITE_API_BASE_URL=http://localhost:3001
+# moveo-cc-api connection for trip events
+CC_API_URL=http://localhost:3001
 ```
 
-### Backend Requirements
-The backend must provide:
-- `GET /api/vehicles` - with optional `search` and pagination params
+### In `moveo-cc` (.env)
+```env
+# Vehicle Tracking WebSocket Server (already configured)
+VITE_VEHICLE_TRACKING_URL=http://localhost:3004
+```
 
-### Response Format
-```json
+## API Endpoints
+
+### Trip Events Endpoint (moveo-cc-api)
+```
+POST /api/trip-events
+Content-Type: application/json
+
+Body:
 {
-  "success": true,
-  "data": [
-    {
-      "id": "vehicle_001",
-      "name": "Truck 001",
-      "licensePlate": "ABC-1234",
-      "make": "Volvo",
-      "model": "FH16",
-      "year": 2023,
-      "vin": "YV2XM65D432E123456"
-    }
-  ]
+  "id": "trip-id",
+  "routeId": "route-id",
+  "vehicleId": "vehicle-id",
+  "driverId": "driver-id",
+  "eventType": "trip:start" | "trip:end",
+  "timestamp": 1234567890,
+  "startTime": "2024-01-01T06:00:00Z",
+  "endTime": "2024-01-01T07:30:00Z",
+  "status": "inProgress" | "completed"
 }
 ```
 
-## How It Works
+## Socket.IO Events
 
-### Component Code
-```typescript
-const handleVehicleSearch = async (searchTerm: string): Promise<string[]> => {
-  try {
-    const { apiService } = await import('@/services/apiService');
-    const vehicles = await apiService.searchVehicles(searchTerm);
-    return vehicles.map((v: { id: string }) => v.id);
-  } catch (error) {
-    console.error('Error searching vehicles:', error);
-    return [];
-  }
-};
-```
+### Server to Client
+- **trip:start** - A trip has started on a subscribed route
+- **trip:end** - A trip has ended on a subscribed route
 
-The dropdown calls `handleVehicleSearch` whenever the search input changes, which:
-1. Imports the API service
-2. Calls `apiService.searchVehicles(searchTerm)`
-3. Returns vehicle IDs for the dropdown to display
-4. On error, returns empty array (graceful fallback)
+### Client to Server
+- **subscribe:route** - Subscribe to route events
+- **unsubscribe:route** - Unsubscribe from route events
 
 ## Testing
 
-### Local Testing
-1. Start `moveo-core` backend on port 3001
-2. Start `moveo-cc-api` on port 3004
-3. Start `moveo-cc` frontend
-4. Navigate to RealTimeTracking page
-5. Type in vehicle search dropdown
-6. Verify vehicles from backend appear
+To test the real-time integration:
 
-### Debug Console
-```javascript
-const { apiService } = await import('/@/services/apiService');
-const vehicles = await apiService.searchVehicles('truck');
-console.log(vehicles);
-```
+1. **Start all services**:
+   ```bash
+   # Terminal 1: moveo-core (backend)
+   cd moveo-core && npm run dev
+   
+   # Terminal 2: moveo-cc-api (WebSocket server)
+   cd moveo-cc-api && npm run dev
+   
+   # Terminal 3: moveo-cc (frontend)
+   cd moveo-cc && npm run dev
+   ```
 
-## API Reference
+2. **Open Trip Monitoring page**:
+   - Navigate to `/trip-monitoring`
+   - Select a date
+   - Select one or more routes
 
-### ApiService Methods
+3. **Create and monitor trips**:
+   - Use VehicleEmulator to create trips
+   - Observe the "Actual" timeline update in real-time
+   - See trip status changes as events are received
 
-```typescript
-async searchVehicles(searchTerm: string, limit: number = 50): Promise<Vehicle[]>
-// Searches vehicles by term, calls GET /api/vehicles?search=...&limit=50
+## Current Status
 
-async getVehicles(params?: { 
-  page?: number; 
-  limit?: number; 
-  search?: string; 
-}): Promise<Vehicle[]>
-// Generic get with optional pagination and search
+✅ **Completed**:
+- Backend event emission in `tripController.ts`
+- Route subscription management in `moveo-cc-api`
+- Frontend structure ready for Socket.IO integration
+- Type safety for trip data updates
 
-async getAllVehicles(): Promise<Vehicle[]>
-// Gets all vehicles with limit 1000
+⏳ **Pending**:
+- Final Socket.IO listener connection in `TripMonitoring.tsx` (commented TODOs)
+- E2E testing of the full real-time flow
 
-async getVehicleById(id: string): Promise<Vehicle>
-// Gets specific vehicle by ID
-```
+## Notes
 
-## Files Summary
-
-| File | Purpose | Status |
-|------|---------|--------|
-| `apiService.ts` | Backend HTTP client | ✅ Created |
-| `RealTimeTracking.tsx` | Integrated with dropdown | ✅ Updated |
-| `BACKEND_INTEGRATION.md` | Integration guide | ✅ Created |
-| `.env` | Configuration | ⚠️ Manual setup |
-
-## Integration Checklist
-
-- ✅ API service created
-- ✅ RealTimeTracking page updated
-- ✅ Error handling added
-- ✅ Documentation created
-- ⚠️ Environment variables need setup
-- ⚠️ Backend API needs verification
-- ⚠️ Testing recommended
-
-## Next Steps
-
-1. **Setup Environment**
-   - Create `.env` file in `moveo-cc/`
-   - Set `VITE_API_BASE_URL` to your backend
-
-2. **Verify Backend**
-   - Ensure `/api/vehicles` endpoint works
-   - Test: `GET http://localhost:3001/api/vehicles?search=truck`
-
-3. **Test Integration**
-   - Start all services
-   - Navigate to RealTimeTracking
-   - Type in vehicle search
-
-4. **Monitor**
-   - Check browser console
-   - Check network tab for API calls
-
-## Support Resources
-
-- `BACKEND_INTEGRATION.md` - Detailed integration guide
-- `VEHICLE_MULTISELECT_SETUP.md` - Multi-select dropdown setup
-- Browser console - Debug information
-- DevTools Network tab - API call monitoring
+- The trip event system is **non-blocking**: if event sending fails, it doesn't interrupt the trip operation
+- Events are **route-scoped**: only clients subscribed to a route receive events for that route
+- The system supports **multiple simultaneous events** across different routes
+- Real-time updates preserve the existing trip data structure and display logic

@@ -12,9 +12,10 @@ import { errorHandler } from '@/middleware/errorHandler';
 import { notFoundHandler } from '@/middleware/notFoundHandler';
 import { vehicleTracking } from '@/services/vehicleTracking';
 import { subscriptionManager } from '@/services/subscriptionManager';
+import { routeSubscriptionManager } from '@/services/routeSubscriptionManager';
 import { telemetryBatcher } from '@/services/telemetryBatcher';
 import { cacheService } from '@/services/cacheService';
-import { VehicleTelemetry, SocketEvents } from '@/types';
+import { VehicleTelemetry, SocketEvents, TripEvent } from '@/types';
 
 // Import routes
 import healthRoutes from '@/routes/health';
@@ -83,8 +84,6 @@ app.post('/api/telemetry', (req, res) => {
   try {
     const telemetry = req.body as VehicleTelemetry;
 
-    console.log("telemetry", telemetry);
-
     // Validate required fields
     if (!telemetry.vehicleId || telemetry.latitude == null || telemetry.longitude == null) {
       return res.status(400).json({
@@ -96,11 +95,11 @@ app.post('/api/telemetry', (req, res) => {
     // Add telemetry to batcher
     telemetryBatcher.addTelemetry(telemetry);
 
-    logger.debug(`Received telemetry for vehicle ${telemetry.vehicleId}`, {
-      lat: telemetry.latitude,
-      lon: telemetry.longitude,
-      speed: telemetry.speed,
-    });
+    // logger.debug(`Received telemetry for vehicle ${telemetry.vehicleId}`, {
+    //   lat: telemetry.latitude,
+    //   lon: telemetry.longitude,
+    //   speed: telemetry.speed,
+    // });
 
     return res.status(201).json({
       success: true,
@@ -112,6 +111,55 @@ app.post('/api/telemetry', (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Failed to process telemetry',
+    });
+  }
+});
+
+/**
+ * Trip Event API Endpoint
+ * Receive trip start/end events from tripController
+ */
+app.post('/api/trip-events', (req, res) => {
+  try {
+    const tripEvent = req.body as TripEvent;
+    logger.debug(`Received trip event: ${tripEvent.eventType} for trip ${tripEvent.id} on route ${tripEvent.routeId}`);
+
+    // Validate required fields
+    if (!tripEvent.id || !tripEvent.routeId || !tripEvent.eventType) {
+      return res.status(400).json({
+        success: false,
+        message: 'Trip event must include id, routeId, and eventType',
+      });
+    }
+
+
+    // Get subscribers for this route
+    const subscribers = routeSubscriptionManager.getSubscribers(tripEvent.routeId);
+
+    if (subscribers.size === 0) {
+      logger.debug(`No subscribers for route ${tripEvent.routeId}`);
+      return res.status(200).json({
+        success: true,
+        message: 'Trip event received but no subscribers',
+      });
+    }
+
+    // Emit to all subscribers
+    for (const socketId of subscribers) {
+      io.to(socketId).emit(tripEvent.eventType, tripEvent as SocketEvents.TripEventPayload);
+      logger.debug(`Emitted ${tripEvent.eventType} to client ${socketId}`);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Trip event broadcasted',
+      subscribersNotified: subscribers.size,
+    });
+  } catch (error) {
+    logger.error('Error processing trip event:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to process trip event',
     });
   }
 });
@@ -253,6 +301,82 @@ io.on('connection', (socket: Socket) => {
   });
 
   /**
+   * Client subscribes to a route for trip events
+   */
+  socket.on('subscribe:route', (payload: SocketEvents.SubscribeRoutePayload, callback) => {
+    try {
+      console.log('Subscribing to route 1:', payload);
+      const { routeId } = payload;
+
+      if (!routeId || typeof routeId !== 'string') {
+        callback?.({
+          success: false,
+          error: 'Invalid routeId',
+        });
+        return;
+      }
+
+      const isNewSubscription = routeSubscriptionManager.subscribe(routeId, socket.id);
+
+      socket.emit('route:subscription:confirmed', {
+        routeId,
+        subscribedAt: Date.now(),
+      } as SocketEvents.RouteSubscriptionConfirmedPayload);
+
+      callback?.({
+        success: true,
+        isNewSubscription,
+      });
+
+      logger.debug(`Client ${socket.id} subscribed to route ${routeId}`);
+    } catch (error) {
+      logger.error('Error in route subscribe handler', error);
+      callback?.({
+        success: false,
+        error: 'Internal server error',
+      });
+    }
+  });
+
+  /**
+   * Client unsubscribes from a route
+   */
+  socket.on('unsubscribe:route', (payload: SocketEvents.UnsubscribeRoutePayload, callback) => {
+    try {
+      const { routeId } = payload;
+
+      if (!routeId || typeof routeId !== 'string') {
+        callback?.({
+          success: false,
+          error: 'Invalid routeId',
+        });
+        return;
+      }
+
+      const wasSubscribed = routeSubscriptionManager.unsubscribe(routeId, socket.id);
+
+      if (wasSubscribed) {
+        socket.emit('route:subscription:removed', {
+          routeId,
+        } as SocketEvents.RouteSubscriptionRemovedPayload);
+      }
+
+      callback?.({
+        success: true,
+        wasSubscribed,
+      });
+
+      logger.debug(`Client ${socket.id} unsubscribed from route ${routeId}`);
+    } catch (error) {
+      logger.error('Error in route unsubscribe handler', error);
+      callback?.({
+        success: false,
+        error: 'Internal server error',
+      });
+    }
+  });
+
+  /**
    * Vehicle sends telemetry
    */
   socket.on('vehicle:telemetry', (payload: VehicleTelemetry) => {
@@ -308,7 +432,8 @@ io.on('connection', (socket: Socket) => {
    */
   socket.on('disconnect', () => {
     const vehicleIds = vehicleTracking.removeClient(socket.id);
-    logger.info(`Client disconnected: ${socket.id} (was subscribed to ${vehicleIds.length} vehicles)`);
+    const routeIds = routeSubscriptionManager.removeClient(socket.id);
+    logger.info(`Client disconnected: ${socket.id} (vehicles: ${vehicleIds.length}, routes: ${routeIds.length})`);
   });
 
   /**

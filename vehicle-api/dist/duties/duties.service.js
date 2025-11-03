@@ -23,11 +23,14 @@ let DutiesService = class DutiesService {
         this.configService = configService;
         this.moveoCore = this.configService.get('moveoCore.apiUrl') || 'http://localhost:3000';
     }
-    async getDuties(driverId, vehicleId, dutyType, authToken) {
+    async getDuties(driverId, vehicleId, dutyType, date, authToken) {
         try {
             let url = `${this.moveoCore}/api/duties?driverId=${driverId}&vehicleId=${vehicleId}`;
             if (dutyType) {
                 url += `&dutyType=${dutyType}`;
+            }
+            if (date) {
+                url += `&date=${date}`;
             }
             const response = await (0, rxjs_1.firstValueFrom)(this.httpService.get(url, {
                 headers: {

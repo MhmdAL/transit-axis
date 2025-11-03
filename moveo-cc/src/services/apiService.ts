@@ -247,6 +247,20 @@ class ApiService {
     }
   }
 
+  async getTripDutiesByDateAndRoutes(date: string, routeIds: string[]): Promise<any[]> {
+    try {
+      const routeIdString = routeIds.join(',');
+      const response = await this.get<ApiResponse<any[]>>(
+        '/api/trips/duties/by-date-routes',
+        { date, routeIds: routeIdString }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching trip duties by date and routes:', error);
+      throw error;
+    }
+  }
+
   async getTimeRangePath(vehicleId: string, startTime: string, endTime: string): Promise<any> {
     try {
       const response = await this.get<ApiResponse<any>>(

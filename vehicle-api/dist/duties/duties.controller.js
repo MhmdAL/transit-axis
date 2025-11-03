@@ -20,7 +20,7 @@ let DutiesController = class DutiesController {
     constructor(dutiesService) {
         this.dutiesService = dutiesService;
     }
-    async getDuties(driverId, vehicleId, dutyType, authHeader) {
+    async getDuties(driverId, vehicleId, dutyType, date, authHeader) {
         try {
             if (!authHeader) {
                 throw new common_1.HttpException('Authorization header required', common_1.HttpStatus.UNAUTHORIZED);
@@ -29,7 +29,7 @@ let DutiesController = class DutiesController {
                 throw new common_1.HttpException('driverId and vehicleId are required', common_1.HttpStatus.BAD_REQUEST);
             }
             const token = authHeader.replace('Bearer ', '');
-            const result = await this.dutiesService.getDuties(driverId, vehicleId, dutyType, token);
+            const result = await this.dutiesService.getDuties(driverId, vehicleId, dutyType, date, token);
             return result;
         }
         catch (error) {
@@ -43,9 +43,10 @@ __decorate([
     __param(0, (0, common_1.Query)('driverId')),
     __param(1, (0, common_1.Query)('vehicleId')),
     __param(2, (0, common_1.Query)('dutyType')),
-    __param(3, (0, common_1.Headers)('authorization')),
+    __param(3, (0, common_1.Query)('date')),
+    __param(4, (0, common_1.Headers)('authorization')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String, String]),
+    __metadata("design:paramtypes", [String, String, String, String, String]),
     __metadata("design:returntype", Promise)
 ], DutiesController.prototype, "getDuties", null);
 exports.DutiesController = DutiesController = __decorate([

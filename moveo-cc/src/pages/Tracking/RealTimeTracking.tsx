@@ -6,7 +6,7 @@ import polyline from '@mapbox/polyline';
 import L from 'leaflet';
 import { theme } from '../../styles/theme';
 import Sidebar from '../../components/Sidebar/Sidebar';
-import { useVehicleTracking } from '@/hooks/useVehicleTracking';
+import { useGlobalVehicleTracking } from '../../context/VehicleTrackingContext';
 import AddVehiclesModal from './AddVehiclesModal';
 import AddRoutesModal from './AddRoutesModal';
 import PathVisualizerModal from './PathVisualizerModal';
@@ -350,7 +350,7 @@ const RealTimeTracking: React.FC = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const location = useLocation();
   const [pathCoordinates, setPathCoordinates] = useState<[number, number][]>([]);
-  const { isConnected, latestBatch, subscribeVehicle, unsubscribeVehicle } = useVehicleTracking();
+  const { isConnected, latestBatch, subscribeVehicle, unsubscribeVehicle, onVehicleTelemetry, offVehicleTelemetry } = useGlobalVehicleTracking();
   const [vehicleLocations, setVehicleLocations] = useState<Record<string, VehicleTelemetry>>({});
   const [selectedFleets, setSelectedFleets] = useState<VehicleSearchResponse[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -404,6 +404,29 @@ const RealTimeTracking: React.FC = () => {
       });
     }
   }, [latestBatch?.batchId]);
+
+  // Listen to real-time vehicle telemetry updates
+  useEffect(() => {
+    const handleTelemetryUpdate = (telemetry: VehicleTelemetry) => {
+      setVehicleLocations((prev) => {
+        return {
+          ...prev,
+          [telemetry.vehicleId]: {
+            ...telemetry,
+            lastUpdate: new Date(),
+          },
+        };
+      });
+    };
+
+    // Register listener for vehicle telemetry
+    onVehicleTelemetry(handleTelemetryUpdate);
+
+    return () => {
+      // Cleanup listener when component unmounts
+      offVehicleTelemetry(handleTelemetryUpdate);
+    };
+  }, [onVehicleTelemetry, offVehicleTelemetry]);
 
   // Fetch and decode route paths when selected routes change
   useEffect(() => {

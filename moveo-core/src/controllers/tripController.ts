@@ -4,6 +4,39 @@ import { tripMetricsService } from '../services/tripMetricsService';
 
 const prisma = new PrismaClient();
 
+// Helper function to send trip events to moveo-cc-api
+const sendTripEvent = async (eventType: 'trip:start' | 'trip:end', tripData: any) => {
+  try {
+    const ccApiUrl = process.env.CC_API_URL || 'http://moveo-cc-api:3004';
+    const event = {
+      id: tripData.id.toString(),
+      routeId: tripData.routeId.toString(),
+      vehicleId: tripData.vehicleId.toString(),
+      driverId: tripData.driverId.toString(),
+      eventType,
+      timestamp: Date.now(),
+      startTime: tripData.startTime?.toISOString(),
+      endTime: tripData.endTime?.toISOString(),
+      status: tripData.status || 'inProgress'
+    };
+
+    const response = await fetch(`${ccApiUrl}/api/trip-events`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(event)
+    });
+
+    if (!response.ok) {
+      console.error(`Failed to send ${eventType} event:`, response.statusText);
+    }
+  } catch (error) {
+    console.error(`Error sending ${eventType} event:`, error);
+    // Don't fail the trip operation if event sending fails
+  }
+};
+
 export const tripController = {
   async getAllTrips(req: Request, res: Response, next: NextFunction) {
     try {
@@ -72,7 +105,9 @@ export const tripController = {
       const {
         routeId,
         driverId,
-        vehicleId
+        vehicleId,
+        tripDutyId,
+        timestamp
       } = req.body;
 
       // Fetch the route with its stops to create trip stops later
@@ -100,7 +135,8 @@ export const tripController = {
             routeId: BigInt(routeId),
             driverId: BigInt(driverId),
             vehicleId: BigInt(vehicleId),
-            startTime: new Date(),
+            tripDutyId: BigInt(tripDutyId),
+            startTime: timestamp ? new Date(timestamp) : new Date(),
             startLocation: 1,
           }
         });
@@ -131,6 +167,9 @@ export const tripController = {
           }
         });
       });
+
+      // Send trip:start event to moveo-cc-api
+      await sendTripEvent('trip:start', result);
 
       res.status(201).json({
         success: true,
@@ -226,7 +265,7 @@ export const tripController = {
   async endTrip(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const { endLocation } = req.body;
+      const { endLocation, endTime } = req.body;
 
       // First get the trip to retrieve vehicleId
       const existingTrip = await prisma.trip.findUnique({
@@ -287,8 +326,10 @@ export const tripController = {
         }
       }
 
+      console.log(endTime);
+
       const updateData: any = {
-        endTime: new Date(),
+        endTime: endTime ? new Date(endTime) : new Date(),
         endLocation: endLocation ? BigInt(endLocation) : undefined,
         path: telemetryPath
       };
@@ -316,6 +357,9 @@ export const tripController = {
           vehicle: { include: { model: true } }
         }
       });
+
+      // Send trip:end event to moveo-cc-api
+      await sendTripEvent('trip:end', trip);
 
       res.json({
         success: true,
@@ -394,6 +438,80 @@ export const tripController = {
         success: true,
         data: tripStop,
         message: 'Departed from stop successfully'
+      });
+    } catch (error) {
+      return next(error);
+    }
+  },
+
+  async getTripDutiesByDateAndRoutes(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { date, routeIds } = req.query;
+
+      if (!date || !routeIds) {
+        return res.status(400).json({
+          success: false,
+          message: 'Date and routeIds parameters are required'
+        });
+      }
+
+      // Parse date string (YYYY-MM-DD format)
+      const selectedDate = new Date(date as string);
+      const nextDate = new Date(selectedDate);
+      nextDate.setDate(nextDate.getDate() + 1);
+
+      // Parse route IDs
+      const routeIdArray = (routeIds as string).split(',').map(id => BigInt(id));
+
+      // Fetch trip duties with related entities
+      const tripDuties = await prisma.tripDuty.findMany({
+        where: {
+          routeId: {
+            in: routeIdArray
+          },
+          duty: {
+            date: {
+              gte: selectedDate,
+              lt: nextDate
+            }
+          }
+        },
+        include: {
+          route: true,
+          Trip: true,
+          duty: {
+            include: {
+              driver: {
+                include: {
+                  user: true
+                }
+              },
+              vehicle: {
+                include: {
+                  model: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: [
+          { routeId: 'asc' },
+          { duty: { startTime: 'asc' } }
+        ]
+      });
+
+      res.json({
+        success: true,  
+        data: tripDuties.map(tripDuty => ({
+          ...tripDuty,
+          trip: tripDuty.Trip?.length > 0 ? tripDuty.Trip[0] : null,
+          startTime: tripDuty.duty?.startTime,
+          endTime: tripDuty.duty?.endTime,
+          driver: tripDuty.duty?.driver ? { ...tripDuty.duty?.driver, name: tripDuty.duty?.driver?.user?.name } : null,
+          vehicle: tripDuty.duty?.vehicle,
+          status: ['completed', 'inProgress', 'pending', 'delayed'][Math.floor(Math.random() * 4)]
+        })),
+        message: 'Trip duties fetched successfully'
       });
     } catch (error) {
       return next(error);

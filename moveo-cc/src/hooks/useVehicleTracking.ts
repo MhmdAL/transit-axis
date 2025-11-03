@@ -134,6 +134,106 @@ export const useVehicleTracking = (options: UseVehicleTrackingOptions = {}) => {
   );
 
   /**
+   * Subscribe to a route for trip events
+   */
+  const subscribeRoute = useCallback(
+    (routeId: string) => {
+      console.log('Subscribing to route 2:', socketRef.current?.connected);
+      if (!socketRef.current?.connected) {
+        console.log('Failed to subscribe to route:', routeId);
+        setError('Not connected to server');
+
+        return;
+      }
+
+      socketRef.current.emit('subscribe:route', { routeId }, (response: any) => {
+        console.log('Subscribed to route 3:', response);
+
+        if (!response.success) {
+          setError(response.error || 'Failed to subscribe to route');
+          console.log('Failed to subscribe to route 2:', response.error);
+        }
+
+        console.log('Subscribed to route:', response);
+      });
+    },
+    [],
+  );
+
+  /**
+   * Unsubscribe from a route
+   */
+  const unsubscribeRoute = useCallback(
+    (routeId: string) => {
+      if (!socketRef.current?.connected) {
+        setError('Not connected to server');
+        return;
+      }
+
+      socketRef.current.emit('unsubscribe:route', { routeId }, (response: any) => {
+        if (!response.success) {
+          setError(response.error || 'Failed to unsubscribe from route');
+        }
+      });
+    },
+    [],
+  );
+
+  /**
+   * Listen to trip events (trip:start and trip:end)
+   */
+  const onTripEvent = useCallback(
+    (eventType: 'trip:start' | 'trip:end', callback: (event: any) => void) => {
+      if (!socketRef.current?.connected) {
+        setError('Not connected to server');
+        return;
+      }
+
+      socketRef.current.on(eventType, callback);
+    },
+    [],
+  );
+
+  /**
+   * Stop listening to trip events
+   */
+  const offTripEvent = useCallback(
+    (eventType: 'trip:start' | 'trip:end', callback: (event: any) => void) => {
+      if (socketRef.current) {
+        socketRef.current.off(eventType, callback);
+      }
+    },
+    [],
+  );
+
+  /**
+   * Listen to vehicle telemetry updates
+   */
+  const onVehicleTelemetry = useCallback(
+    (callback: (telemetry: VehicleTelemetry) => void) => {
+      if (!socketRef.current?.connected) {
+        setError('Not connected to server');
+        return;
+      }
+
+      socketRef.current.on('vehicle:telemetry', callback);
+    },
+    [],
+  );
+
+  /**
+   * Stop listening to vehicle telemetry updates
+   */
+  const offVehicleTelemetry = useCallback(
+    (callback: (telemetry: VehicleTelemetry) => void) => {
+      if (socketRef.current) {
+        socketRef.current.off('vehicle:telemetry', callback);
+      }
+    },
+    [],
+  );
+
+  /**
    * Send vehicle telemetry
    */
   const sendTelemetry = useCallback(
@@ -189,6 +289,12 @@ export const useVehicleTracking = (options: UseVehicleTrackingOptions = {}) => {
     disconnect,
     subscribeVehicle,
     unsubscribeVehicle,
+    subscribeRoute,
+    unsubscribeRoute,
+    onTripEvent,
+    offTripEvent,
+    onVehicleTelemetry,
+    offVehicleTelemetry,
     sendTelemetry,
     requestStats,
   };

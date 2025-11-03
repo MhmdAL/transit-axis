@@ -19,7 +19,10 @@ class StartTripDto {
     routeId;
     vehicleId;
     driverId;
-    scheduledDepartureTime;
+    timestamp;
+}
+class EndTripDto {
+    timestamp;
 }
 let TripsController = class TripsController {
     tripsService;
@@ -39,13 +42,13 @@ let TripsController = class TripsController {
             throw new common_1.HttpException(error.message || 'Failed to start trip', common_1.HttpStatus.BAD_REQUEST);
         }
     }
-    async endTrip(tripId, authHeader) {
+    async endTrip(tripId, endTripDto, authHeader) {
         try {
             if (!authHeader) {
                 throw new common_1.HttpException('Authorization header required', common_1.HttpStatus.UNAUTHORIZED);
             }
             const token = authHeader.replace('Bearer ', '');
-            const result = await this.tripsService.endTrip(tripId, token);
+            const result = await this.tripsService.endTrip(tripId, endTripDto, token);
             return result;
         }
         catch (error) {
@@ -63,11 +66,12 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TripsController.prototype, "startTrip", null);
 __decorate([
-    (0, common_1.Patch)(':id/end'),
+    (0, common_1.Post)(':id/end'),
     __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Headers)('authorization')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Headers)('authorization')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:paramtypes", [String, EndTripDto, String]),
     __metadata("design:returntype", Promise)
 ], TripsController.prototype, "endTrip", null);
 exports.TripsController = TripsController = __decorate([
