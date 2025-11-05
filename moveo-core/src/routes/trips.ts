@@ -14,6 +14,9 @@ router.delete('/:id', authMiddleware, tripController.deleteTrip);
 // Trip duties - must come before :id routes
 router.get('/duties/by-date-routes', authMiddleware, tripController.getTripDutiesByDateAndRoutes);
 
+// Trip details endpoint
+router.get('/:id/details', authMiddleware, tripController.getTripDetails);
+
 // Trip operations
 router.post('/:id/start', authMiddleware, tripController.startTrip);
 router.post('/:id/end', authMiddleware, tripController.endTrip);

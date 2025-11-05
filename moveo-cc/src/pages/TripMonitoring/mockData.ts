@@ -36,6 +36,7 @@ export interface Trip {
 }
 
 export interface TripBlockData {
+    id: string;
     startTime: string;
     endTime: string;
     status: TripStatus;

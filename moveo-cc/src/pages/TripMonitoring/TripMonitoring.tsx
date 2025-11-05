@@ -4,9 +4,10 @@ import { theme } from '../../styles/theme';
 import Sidebar from '../../components/Sidebar/Sidebar';
 import RouteSelector, { type Route } from '../../components/UI/RouteSelector';
 import TripTimeline from './TripTimeline';
+import TripDetailsModal from '../Tracking/TripDetailsModal';
 import { apiService } from '../../services/apiService';
 import { useGlobalVehicleTracking } from '../../context/VehicleTrackingContext';
-import { type TripBlockData, type TripDuty } from './mockData';
+import { type Trip, type TripBlockData, type TripDuty } from './mockData';
 
 const PageContainer = styled.div`
   display: flex;
@@ -156,6 +157,8 @@ const TripMonitoring: React.FC = () => {
   const [isSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showRouteSelector, setShowRouteSelector] = useState(false);
+  const [showTripDetailsModal, setShowTripDetailsModal] = useState(false);
+  const [selectedTrip, setSelectedTrip] = useState<TripBlockData | null>(null);
 
   // Get global vehicle tracking for real-time events
   const { subscribeRoute, unsubscribeRoute, onTripEvent, offTripEvent } = useGlobalVehicleTracking();
@@ -214,6 +217,9 @@ const TripMonitoring: React.FC = () => {
             }
           };
         }
+
+        console.log('Updated trips:', updatedTrips);
+        
         return updatedTrips;
       });
     };
@@ -265,8 +271,9 @@ const TripMonitoring: React.FC = () => {
   };
 
   const handleTripClick = (trip: TripBlockData) => {
-    // Future: Handle trip click to show details modal
     console.log('Trip clicked:', trip);
+    setSelectedTrip(trip);
+    setShowTripDetailsModal(true);
   };
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -365,6 +372,13 @@ const TripMonitoring: React.FC = () => {
           </TimelineWrapper>
         </ContentArea>
       </MainContent>
+      {showTripDetailsModal && selectedTrip && (
+        <TripDetailsModal
+          isOpen={showTripDetailsModal}
+          onClose={() => setShowTripDetailsModal(false)}
+          tripId={selectedTrip.id}
+        />
+      )}
     </PageContainer>
   );
 };

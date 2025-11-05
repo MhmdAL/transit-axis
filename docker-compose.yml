@@ -1,46 +1,6 @@
 version: '3.8'
 
 services:
-  # PostgreSQL for Moveo Core
-  moveo-postgres:
-    image: postgres:15
-    container_name: moveo-postgres
-    environment:
-      POSTGRES_DB: moveo_fleet
-      POSTGRES_USER: moveo_user
-      POSTGRES_PASSWORD: moveo_password
-    ports:
-      - "5432:5432"
-    volumes:
-      - moveo_postgres_data:/var/lib/postgresql/data
-    networks:
-      - moveo-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U moveo_user -d moveo_fleet"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # PostgreSQL for Telemetry Service
-  telemetry-postgres:
-    image: postgres:15
-    container_name: telemetry-postgres
-    environment:
-      POSTGRES_DB: moveo_telemetry
-      POSTGRES_USER: telemetry_user
-      POSTGRES_PASSWORD: telemetry_password
-    ports:
-      - "5433:5432"
-    volumes:
-      - telemetry_postgres_data:/var/lib/postgresql/data
-    networks:
-      - moveo-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U telemetry_user -d moveo_telemetry"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   # Moveo Core API
   moveo-core:
     build:
@@ -55,9 +15,6 @@ services:
       - JWT_SECRET=your-super-secret-jwt-key-here
       - PORT=3000
       - TELEMETRY_SERVICE_API_URL=http://telemetry-service:3003
-    depends_on:
-      moveo-postgres:
-        condition: service_healthy
     networks:
       - moveo-network
     volumes:
@@ -77,9 +34,6 @@ services:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://telemetry_user:telemetry_password@telemetry-postgres:5432/moveo_telemetry?schema=public
       - PORT=3003
-    depends_on:
-      telemetry-postgres:
-        condition: service_healthy
     networks:
       - moveo-network
     volumes:
@@ -144,10 +98,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
-
-volumes:
-  moveo_postgres_data:
-  telemetry_postgres_data:
 
 networks:
   moveo-network:

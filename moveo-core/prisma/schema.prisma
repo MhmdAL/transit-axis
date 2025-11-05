@@ -55,6 +55,9 @@ model User {
   @@unique([email, userType])
   @@unique([qid, userType])
   @@map("user")
+
+  incidentsReported Incident[] @relation("incidentsReported")
+  incidentsResolved Incident[] @relation("incidentsResolved")
 }
 
 
@@ -87,6 +90,7 @@ model Driver {
 
   @@map("driver")
   Duty Duty[]
+  Incident Incident[]
 }
 
 
@@ -112,6 +116,7 @@ model Vehicle {
 
   @@map("vehicle")
   Duty Duty[]
+  Incident Incident[]
 }
 
 model Location {
@@ -146,6 +151,7 @@ model Route {
 
   @@map("route")
   TripDuty TripDuty[]
+  Incident Incident[]
 }
 
 model RouteStop {
@@ -186,6 +192,7 @@ model Trip {
   tripStops           TripStop[]
 
   @@map("trip")
+  Incident Incident[]
 }
 
 model TripStop {
@@ -200,6 +207,56 @@ model TripStop {
   stop         Stop  @relation(fields: [stopId], references: [id])
 
   @@map("trip_stop")
+}
+
+model Incident {
+  id           BigInt @id @default(autoincrement())
+  tripId       BigInt
+  routeId      BigInt
+  vehicleId    BigInt
+  driverId     BigInt
+  reportedByUserId   BigInt
+  reportedAt   DateTime
+  description  String
+  type         IncidentType @default(OTHER)
+  severity     IncidentSeverity @default(LOW)
+  status       IncidentStatus @default(OPEN)
+  resolvedByUserId   BigInt?
+  resolvedAt   DateTime?
+  resolvedNotes String?
+
+  @@map("incident")
+
+  trip Trip @relation(fields: [tripId], references: [id])
+  route Route @relation(fields: [routeId], references: [id])
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id])
+  driver Driver @relation(fields: [driverId], references: [id])
+  
+  reportedByUser User @relation("incidentsReported", fields: [reportedByUserId], references: [id])
+  resolvedByUser User? @relation("incidentsResolved", fields: [resolvedByUserId], references: [id])
+}
+
+enum IncidentSeverity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum IncidentStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum IncidentType {
+  ACCIDENT
+  BREAKDOWN
+  DELAY
+  FUEL
+  MAINTENANCE
+  TRAFFIC
+  SAFETY
+  OTHER
 }
 
 model Shift {

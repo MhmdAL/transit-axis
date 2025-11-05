@@ -71,7 +71,7 @@ export const routeController = {
 
   async createRoute(req: Request, res: Response, next: NextFunction) {
     try {
-      const { name, code, stops, segmentPaths } = req.body;
+      const { name, code, stops, segmentPaths, etas, waitTimes } = req.body;
       
       // Separate new stops (id === 0) from existing stops
       const newStops = stops.filter((stop: any) => !stop.id || stop.id === 0 || stop.id === '0');
@@ -113,13 +113,15 @@ export const routeController = {
         }
       });
       
-      // Create routeStops with segment paths from frontend
+      // Create routeStops with segment paths, ETAs, and wait times from frontend
       const routeStopsData = allStopsWithIds.map((stop: any, index: number) => ({
         routeId: route.id,
         stopId: BigInt(stop._createdId || stop.id),
         stopOrder: index,
         isActive: true,
-        path: segmentPaths?.[index] || null  // Use path from frontend, or null if not provided
+        path: segmentPaths?.[index] || null,  // Use path from frontend, or null if not provided
+        eta: etas?.[index] || null,  // Use ETA from frontend, or null if not provided
+        waitTime: waitTimes?.[index] || null  // Use wait time from frontend, or null if not provided
       }));
       
       await prisma.routeStop.createMany({
@@ -151,7 +153,7 @@ export const routeController = {
   async updateRoute(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const { name, code, isActive, totalEstimatedDuration, stops, segmentPaths } = req.body;
+      const { name, code, isActive, totalEstimatedDuration, stops, segmentPaths, etas, waitTimes } = req.body;
 
       // If stops are provided, handle updating them
       if (stops && Array.isArray(stops)) {
@@ -190,13 +192,15 @@ export const routeController = {
           where: { routeId: BigInt(id) }
         });
         
-        // Create new routeStops with segment paths from frontend
+        // Create new routeStops with segment paths, ETAs, and wait times from frontend
         const routeStopsData = allStopsWithIds.map((stop: any, index: number) => ({
           routeId: BigInt(id),
           stopId: BigInt(stop._createdId || stop.id),
           stopOrder: index,
           isActive: true,
-          path: segmentPaths?.[index] || null  // Use path from frontend, or null if not provided
+          path: segmentPaths?.[index] || null,  // Use path from frontend, or null if not provided
+          eta: etas?.[index] || null,  // Use ETA from frontend, or null if not provided
+          waitTime: waitTimes?.[index] || null  // Use wait time from frontend, or null if not provided
         }));
         
         await prisma.routeStop.createMany({

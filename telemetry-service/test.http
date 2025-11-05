@@ -23,7 +23,7 @@ GET {{baseUrl}}/api/telemetry
 GET {{baseUrl}}/api/telemetry/3
 
 ### Get Vehicle 1 Logs
-GET {{baseUrl}}/api/telemetry/3/logs
+GET {{baseUrl}}/api/telemetry/1/logs
 
 ### Get Vehicle 1 Logs for Trip 1
 GET {{baseUrl}}/api/telemetry/3/logs?tripId=1

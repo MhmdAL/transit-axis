@@ -235,6 +235,7 @@ const CreateRoute: React.FC = () => {
   const mapContainerRef = React.useRef<HTMLDivElement>(null);
   const [isManualStopModalOpen, setIsManualStopModalOpen] = useState(false);
   const [tempManualStop, setTempManualStop] = useState<Stop | null>(null);
+  const [tempWaitTime, setTempWaitTime] = useState<number | null>(null);
 
   useEffect(() => {
     const loadRouteAndStops = async () => {
@@ -317,6 +318,7 @@ const CreateRoute: React.FC = () => {
       }
     };
     setTempManualStop(manualStop);
+    setTempWaitTime(null);
     setIsManualStopModalOpen(true);
   };
 
@@ -333,9 +335,10 @@ const CreateRoute: React.FC = () => {
       return;
     }
     
-    // Calculate segment path from previous stop if exists
+    // Calculate segment path and ETA from previous stop if exists
     const addManualStop = async () => {
       let segmentPath: string | null = null;
+      let eta: number | null = null;
       const newStopOrder = selectedStops.length; // Add at end
       
       if (selectedStops.length > 0) {
@@ -347,15 +350,18 @@ const CreateRoute: React.FC = () => {
           ];
           const routeData = await RoutingService.calculateRoute(waypoints) as any;
           segmentPath = routeData?.geometry || null;
+          // Calculate ETA in minutes from duration in seconds
+          eta = routeData?.duration ? Math.round(routeData.duration / 60) : null;
         } catch (error) {
           console.error('Error calculating segment path:', error);
         }
       }
       
-      setSelectedStops(prev => [...prev, { ...tempManualStop, _segmentPath: segmentPath, order: newStopOrder } as any]);
+      setSelectedStops(prev => [...prev, { ...tempManualStop, _segmentPath: segmentPath, _eta: eta, _waitTime: tempWaitTime, order: newStopOrder } as any]);
     setManualStopCounter(prev => prev + 1);
     setIsManualStopModalOpen(false);
     setTempManualStop(null);
+    setTempWaitTime(null);
     };
     
     addManualStop();
@@ -364,6 +370,7 @@ const CreateRoute: React.FC = () => {
   const handleCancelManualStop = () => {
     setIsManualStopModalOpen(false);
     setTempManualStop(null);
+    setTempWaitTime(null);
   };
 
   useEffect(() => {
@@ -383,9 +390,10 @@ const CreateRoute: React.FC = () => {
 
   const handleAddStop = (stop: Stop) => {
     if (!selectedStops.find(s => String(s.id) === String(stop.id))) {
-      // Calculate segment path from previous stop if exists
+      // Calculate segment path and ETA from previous stop if exists
       const calculateSegmentPath = async () => {
         let segmentPath: string | null = null;
+        let eta: number | null = null;
         const newStopOrder = selectedStops.length; // Add at end
         
         if (selectedStops.length > 0) {
@@ -397,13 +405,15 @@ const CreateRoute: React.FC = () => {
             ];
             const routeData = await RoutingService.calculateRoute(waypoints) as any;
             segmentPath = routeData?.geometry || null;
+            // Calculate ETA in minutes from duration in seconds
+            eta = routeData?.duration ? Math.round(routeData.duration / 60) : null;
           } catch (error) {
             console.error('Error calculating segment path:', error);
           }
         }
         
-        // Add stop with its stopOrder
-        setSelectedStops(prev => [...prev, { ...stop, _segmentPath: segmentPath, order: newStopOrder } as any]);
+        // Add stop with its stopOrder, ETA and wait time
+        setSelectedStops(prev => [...prev, { ...stop, _segmentPath: segmentPath, _eta: eta, _waitTime: null, order: newStopOrder } as any]);
       };
       
       calculateSegmentPath();
@@ -436,7 +446,8 @@ const CreateRoute: React.FC = () => {
       newStops = newStops.map((stop: any, idx) => ({ 
         ...stop, 
         order: idx, 
-        _segmentPath: idx === 0 ? null : stop._segmentPath 
+        _segmentPath: idx === 0 ? null : stop._segmentPath,
+        _eta: idx === 0 ? null : stop._eta
       } as any));
       setSelectedStops(newStops);
       return;
@@ -457,11 +468,12 @@ const CreateRoute: React.FC = () => {
           
           const routeData = await RoutingService.calculateRoute(waypoints) as any;
           const segmentPath = routeData?.geometry || null;
+          const eta = routeData?.duration ? Math.round(routeData.duration / 60) : null;
           
-          // Update the specific stop with the recalculated path
+          // Update the specific stop with the recalculated path and ETA
           newStops = newStops.map((stop: any) => 
             stop.order === stopOrder + 1 
-              ? { ...stop, _segmentPath: segmentPath }
+              ? { ...stop, _segmentPath: segmentPath, _eta: eta }
               : stop
           );
         } catch (error) {
@@ -499,17 +511,21 @@ const CreateRoute: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      // Use pre-calculated segment paths if available, otherwise calculate them
+      // Use pre-calculated segment paths, ETAs, and wait times if available, otherwise calculate them
       const segmentPaths: (string | null)[] = [];
+      const etas: (number | null)[] = [];
+      const waitTimes: (number | null)[] = [];
       
       if (selectedStops.length >= 2) {
-        // For each stop, use its pre-calculated _segmentPath if available
+        // For each stop, use its pre-calculated _segmentPath, _eta, and _waitTime if available
         for (let i = 0; i < selectedStops.length; i++) {
           const stop = selectedStops[i] as any;
-          // stopOrder should equal i, segment path is stored on the stop
+          // stopOrder should equal i, segment path, eta, and wait time are stored on the stop
           if (stop._segmentPath !== undefined) {
             // Use pre-calculated path
             segmentPaths.push(stop._segmentPath);
+            etas.push(stop._eta || null);
+            waitTimes.push(stop._waitTime || null);
           } else if (i > 0) {
             // Calculate if not pre-calculated
             try {
@@ -523,13 +539,21 @@ const CreateRoute: React.FC = () => {
               
               const routeData = await RoutingService.calculateRoute(waypoints) as any;
               segmentPaths.push(routeData?.geometry || null);
+              // Calculate ETA in minutes from duration in seconds
+              const eta = routeData?.duration ? Math.round(routeData.duration / 60) : null;
+              etas.push(eta);
+              waitTimes.push(stop._waitTime || null);
             } catch (segmentError) {
               console.error(`Error calculating segment ${i}:`, segmentError);
               segmentPaths.push(null);
+              etas.push(null);
+              waitTimes.push(null);
             }
           } else {
-            // First stop has no incoming path
+            // First stop has no incoming path or ETA
             segmentPaths.push(null);
+            etas.push(null);
+            waitTimes.push(stop._waitTime || null);
           }
         }
       }
@@ -538,7 +562,9 @@ const CreateRoute: React.FC = () => {
         name: formData.name,
         code: formData.code,
         stops: selectedStops.map((stop, idx) => ({...stop, stopOrder: idx})),
-        segmentPaths: segmentPaths
+        segmentPaths: segmentPaths,
+        etas: etas,
+        waitTimes: waitTimes
       };
 
       console.log('Creating/Updating route:', newRoute);
@@ -694,6 +720,19 @@ const CreateRoute: React.FC = () => {
                   placeholder="Enter stop code"
                   value={tempManualStop.code}
                   onChange={(e) => handleManualStopModalChange('code', e.target.value)}
+                />
+              </ModalFormGroup>
+
+              {/* Wait Time */}
+              <ModalFormGroup>
+                <ModalLabel>Wait Time (minutes)</ModalLabel>
+                <ModalInput
+                  type="number"
+                  placeholder="e.g., 5, 10, 15"
+                  min="0"
+                  step="1"
+                  value={tempWaitTime ?? ''}
+                  onChange={(e) => setTempWaitTime(e.target.value ? parseInt(e.target.value) : null)}
                 />
               </ModalFormGroup>
             </>

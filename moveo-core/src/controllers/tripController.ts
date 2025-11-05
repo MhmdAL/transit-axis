@@ -13,6 +13,7 @@ const sendTripEvent = async (eventType: 'trip:start' | 'trip:end', tripData: any
       routeId: tripData.routeId.toString(),
       vehicleId: tripData.vehicleId.toString(),
       driverId: tripData.driverId.toString(),
+      tripDutyId: tripData.tripDuty?.id.toString(),
       eventType,
       timestamp: Date.now(),
       startTime: tripData.startTime?.toISOString(),
@@ -160,6 +161,7 @@ export const tripController = {
             route: true,
             driver: true,
             vehicle: { include: { model: true } },
+            tripDuty: true,
             tripStops: {
               include: { stop: { include: { location: true } } },
               orderBy: { stopOrder: 'asc' }
@@ -269,7 +271,10 @@ export const tripController = {
 
       // First get the trip to retrieve vehicleId
       const existingTrip = await prisma.trip.findUnique({
-        where: { id: BigInt(id) }
+        where: { id: BigInt(id) },
+        include: {
+          tripDuty: true
+        }
       });
 
       if (!existingTrip) {
@@ -512,6 +517,78 @@ export const tripController = {
           status: ['completed', 'inProgress', 'pending', 'delayed'][Math.floor(Math.random() * 4)]
         })),
         message: 'Trip duties fetched successfully'
+      });
+    } catch (error) {
+      return next(error);
+    }
+  },
+
+  async getTripDetails(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+
+      const trip = await prisma.trip.findUnique({
+        where: { id: BigInt(id) },
+        include: {
+          route: {
+            include: {
+              routeStops: {
+                include: { stop: true },
+                orderBy: { stopOrder: 'asc' }
+              }
+            }
+          },
+          driver: {
+            include: {
+              user: true
+            }
+          },
+          vehicle: { include: { model: true } },
+          tripDuty: true,
+          tripStops: {
+            include: {
+              stop: { include: { location: true } }
+            },
+            orderBy: { stopOrder: 'asc' }
+          }
+        }
+      });
+
+      if (!trip) {
+        return res.status(404).json({
+          success: false,
+          message: 'Trip not found'
+        });
+      }
+
+      res.json({
+        success: true,
+        data: {
+          id: trip.id.toString(),
+          routeName: trip.route?.name,
+          driverName: trip.driver?.user?.name,
+          vehicleFleetNo: trip.vehicle?.fleetNo,
+          startTime: trip.startTime,
+          endTime: trip.endTime,
+          route: trip.route,
+          driver: trip.driver,
+          vehicle: trip.vehicle,
+          tripStops: trip.tripStops.map(ts => ({
+            id: ts.id.toString(),
+            stopId: ts.stopId.toString(),
+            stopOrder: ts.stopOrder,
+            stopName: ts.stop?.name,
+            eta: ts.eta,
+            arrivalTime: ts.arrivalTime,
+            departureTime: ts.departureTime,
+            location: ts.stop?.location
+          })),
+          routeStops: trip.route?.routeStops.map(rs => ({
+            stopOrder: rs.stopOrder,
+            eta: rs.eta,
+            waitTime: rs.waitTime
+          })) || []
+        }
       });
     } catch (error) {
       return next(error);

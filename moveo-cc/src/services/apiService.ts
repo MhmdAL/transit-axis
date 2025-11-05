@@ -261,6 +261,18 @@ class ApiService {
     }
   }
 
+  async getTripDetails(tripId: string): Promise<any> {
+    try {
+      const response = await this.get<ApiResponse<any>>(
+        `/api/trips/${tripId}/details`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching trip details:', error);
+      throw error;
+    }
+  }
+
   async getTimeRangePath(vehicleId: string, startTime: string, endTime: string): Promise<any> {
     try {
       const response = await this.get<ApiResponse<any>>(
@@ -284,6 +296,70 @@ class ApiService {
       return response.data;
     } catch (error) {
       console.error('Error fetching vehicles telemetry:', error);
+      throw error;
+    }
+  }
+
+  // Incident API methods
+  async getIncidentsByTrip(tripId: string): Promise<any[]> {
+    try {
+      const response = await this.get<ApiResponse<any[]>>(
+        `/api/incidents/trip/${tripId}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching incidents:', error);
+      throw error;
+    }
+  }
+
+  async createIncident(tripId: string, routeId: string, vehicleId: string, driverId: string, reportedByUserId: string, description: string, type: string = 'OTHER', severity: string = 'LOW'): Promise<any> {
+    try {
+      const response = await this.post<ApiResponse<any>>(
+        '/api/incidents',
+        {
+          tripId,
+          routeId,
+          vehicleId,
+          driverId,
+          reportedByUserId,
+          description,
+          type,
+          severity
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error creating incident:', error);
+      throw error;
+    }
+  }
+
+  async resolveIncident(incidentId: string, resolvedByUserId: string, resolvedNotes: string): Promise<any> {
+    try {
+      const response = await this.post<ApiResponse<any>>(
+        `/api/incidents/${incidentId}/resolve`,
+        {
+          resolvedByUserId,
+          resolvedNotes
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error resolving incident:', error);
+      throw error;
+    }
+  }
+
+  async updateIncidentStatus(incidentId: string, status: string): Promise<any> {
+    try {
+      const response = await this.post<ApiResponse<any>>(
+        `/api/incidents/${incidentId}/status`,
+        { status }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating incident status:', error);
       throw error;
     }
   }

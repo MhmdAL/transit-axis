@@ -857,6 +857,12 @@ const RouteMap: React.FC<RouteMapProps> = ({
                   <PopupTitle>{stop.name}</PopupTitle>
                   <PopupDetail><strong>Code:</strong> {stop.code}</PopupDetail>
                   <PopupDetail><strong>Order:</strong> #{(stop as any).order + 1} in route</PopupDetail>
+                  {(stop as any)._eta !== undefined && (stop as any)._eta !== null && (
+                    <PopupDetail><strong>ETA:</strong> {(stop as any)._eta} min from previous stop</PopupDetail>
+                  )}
+                  {(stop as any)._waitTime !== undefined && (stop as any)._waitTime !== null && (
+                    <PopupDetail><strong>Wait Time:</strong> {(stop as any)._waitTime} min</PopupDetail>
+                  )}
                   {/* {onStopClick && !isSelected && (
                     <PopupDetail style={{ color: theme.colors.primary, fontWeight: 'bold', marginTop: '8px' }}>
                       Click to add to route

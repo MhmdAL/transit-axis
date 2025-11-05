@@ -76,6 +76,7 @@ export interface TripEvent {
   routeId: string;
   vehicleId: string;
   driverId: string;
+  tripDutyId?: string;
   eventType: 'trip:start' | 'trip:end';
   timestamp: number; // milliseconds since epoch
   startTime?: string; // ISO string
