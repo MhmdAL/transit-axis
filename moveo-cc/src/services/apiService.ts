@@ -363,6 +363,45 @@ class ApiService {
       throw error;
     }
   }
+
+  // Vehicle Message API methods
+  async getVehicleMessages(vehicleId: string, limit: number = 50, offset: number = 0): Promise<any> {
+    try {
+      const response = await this.get<ApiResponse<any>>(
+        `/api/vehicle-messages/vehicle/${vehicleId}`,
+        { limit, offset }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching vehicle messages:', error);
+      throw error;
+    }
+  }
+
+  async getMessageTemplates(): Promise<any> {
+    try {
+      const response = await this.get<ApiResponse<any>>(
+        `/api/vehicle-messages/templates/all`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching message templates:', error);
+      throw error;
+    }
+  }
+
+  async sendVehicleMessage(vehicleId: string, message: string, sentByUserId: string, severity: string = 'NORMAL', routeId?: string, tripId?: string): Promise<any> {
+    try {
+      const response = await this.post<ApiResponse<any>>(
+        `/api/vehicle-messages`,
+        { vehicleId, message, sentByUserId, severity, ...(routeId && { routeId }), ...(tripId && { tripId }) }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error sending vehicle message:', error);
+      throw error;
+    }
+  }
 }
 
 // Create singleton instance

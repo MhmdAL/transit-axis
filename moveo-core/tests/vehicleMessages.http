@@ -1,0 +1,87 @@
+### Vehicle Message Tests
+
+@baseUrl = http://localhost:3000/api
+@token = your_auth_token_here
+
+### Get all message templates
+GET {{baseUrl}}/vehicle-messages/templates/all
+Authorization: Bearer {{token}}
+
+### Get traffic templates
+GET {{baseUrl}}/vehicle-messages/templates/traffic
+Authorization: Bearer {{token}}
+
+### Get maintenance templates
+GET {{baseUrl}}/vehicle-messages/templates/maintenance
+Authorization: Bearer {{token}}
+
+### Get safety templates
+GET {{baseUrl}}/vehicle-messages/templates/safety
+Authorization: Bearer {{token}}
+
+### Get administrative templates
+GET {{baseUrl}}/vehicle-messages/templates/administrative
+Authorization: Bearer {{token}}
+
+### Get operational templates
+GET {{baseUrl}}/vehicle-messages/templates/operational
+Authorization: Bearer {{token}}
+
+### Get communication templates
+GET {{baseUrl}}/vehicle-messages/templates/communication
+Authorization: Bearer {{token}}
+
+### Create a vehicle message using a template
+POST {{baseUrl}}/vehicle-messages
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "vehicleId": "1",
+  "sentByUserId": "1",
+  "message": "Heavy traffic detected ahead. Estimated delay: 15 minutes. Maintain safe distance.",
+  "severity": "WARNING"
+}
+
+### Create a critical message
+POST {{baseUrl}}/vehicle-messages
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "vehicleId": "2",
+  "sentByUserId": "1",
+  "message": "EMERGENCY: Stop the vehicle immediately and contact dispatch.",
+  "severity": "CRITICAL"
+}
+
+### Get all vehicle messages
+GET {{baseUrl}}/vehicle-messages
+Authorization: Bearer {{token}}
+
+### Get vehicle messages with severity filter
+GET {{baseUrl}}/vehicle-messages?severity=CRITICAL&limit=10
+Authorization: Bearer {{token}}
+
+### Get messages for specific vehicle
+GET {{baseUrl}}/vehicle-messages/vehicle/1
+Authorization: Bearer {{token}}
+
+### Get specific message by ID
+GET {{baseUrl}}/vehicle-messages/1
+Authorization: Bearer {{token}}
+
+### Update a message
+PUT {{baseUrl}}/vehicle-messages/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "message": "Updated message content",
+  "severity": "NORMAL"
+}
+
+### Delete a message
+DELETE {{baseUrl}}/vehicle-messages/1
+Authorization: Bearer {{token}}
+

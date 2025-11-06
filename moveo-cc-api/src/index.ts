@@ -164,6 +164,66 @@ app.post('/api/trip-events', (req, res) => {
   }
 });
 
+/**
+ * Vehicle Message API Endpoint
+ * Receive vehicle messages from vehicleMessageController
+ * Notify route subscribers of new messages
+ */
+app.post('/api/message-events', (req, res) => {
+  try {
+    const messageEvent = req.body;
+    logger.debug(`Received message event for vehicle ${messageEvent.vehicleId} on route ${messageEvent.routeId}`);
+
+    // Validate required fields
+    if (!messageEvent.vehicleId || !messageEvent.routeId || !messageEvent.message) {
+      return res.status(400).json({
+        success: false,
+        message: 'Message event must include vehicleId, routeId, and message',
+      });
+    }
+
+    // Get subscribers for this route
+    const subscribers = routeSubscriptionManager.getSubscribers(messageEvent.routeId);
+
+    if (subscribers.size === 0) {
+      logger.debug(`No subscribers for route ${messageEvent.routeId}`);
+      return res.status(200).json({
+        success: true,
+        message: 'Message received but no subscribers',
+      });
+    }
+
+    // Emit to all subscribers
+    for (const socketId of subscribers) {
+      io.to(socketId).emit('vehicle:message', {
+        id: messageEvent.id,
+        vehicleId: messageEvent.vehicleId,
+        routeId: messageEvent.routeId,
+        tripId: messageEvent.tripId,
+        message: messageEvent.message,
+        severity: messageEvent.severity,
+        sentByUser: messageEvent.sentByUser,
+        sentByUserType: messageEvent.sentByUserType,
+        sentAt: messageEvent.sentAt,
+        vehicleFleetNo: messageEvent.vehicleFleetNo,
+      });
+      logger.debug(`Emitted vehicle:message to client ${socketId}`);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Message broadcasted to route subscribers',
+      subscribersNotified: subscribers.size,
+    });
+  } catch (error) {
+    logger.error('Error processing message event:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to process message event',
+    });
+  }
+});
+
 // Error handling
 app.use(notFoundHandler);
 app.use(errorHandler);

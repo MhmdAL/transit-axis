@@ -18,6 +18,7 @@ const auth_module_1 = require("./auth/auth.module");
 const trips_module_1 = require("./trips/trips.module");
 const telemetry_module_1 = require("./telemetry/telemetry.module");
 const duties_module_1 = require("./duties/duties.module");
+const messages_module_1 = require("./messages/messages.module");
 const configuration_1 = __importDefault(require("./config/configuration"));
 let AppModule = class AppModule {
 };
@@ -34,6 +35,7 @@ exports.AppModule = AppModule = __decorate([
             trips_module_1.TripsModule,
             telemetry_module_1.TelemetryModule,
             duties_module_1.DutiesModule,
+            messages_module_1.MessagesModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [],

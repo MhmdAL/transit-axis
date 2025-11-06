@@ -5,9 +5,11 @@ import Sidebar from '../../components/Sidebar/Sidebar';
 import RouteSelector, { type Route } from '../../components/UI/RouteSelector';
 import TripTimeline from './TripTimeline';
 import TripDetailsModal from '../Tracking/TripDetailsModal';
+import VehicleMessageModal from '../Tracking/VehicleMessageModal';
 import { apiService } from '../../services/apiService';
 import { useGlobalVehicleTracking } from '../../context/VehicleTrackingContext';
-import { type Trip, type TripBlockData, type TripDuty } from './mockData';
+import { useToast } from '../../context/ToastContext';
+import { type TripBlockData, type TripDuty } from './mockData';
 
 const PageContainer = styled.div`
   display: flex;
@@ -159,9 +161,13 @@ const TripMonitoring: React.FC = () => {
   const [showRouteSelector, setShowRouteSelector] = useState(false);
   const [showTripDetailsModal, setShowTripDetailsModal] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState<TripBlockData | null>(null);
+  const [showMessageModal, setShowMessageModal] = useState(false);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
+  const [currentUserId] = useState('1'); // Get from auth context or props
 
   // Get global vehicle tracking for real-time events
-  const { subscribeRoute, unsubscribeRoute, onTripEvent, offTripEvent } = useGlobalVehicleTracking();
+  const { subscribeRoute, unsubscribeRoute, onTripEvent, offTripEvent, onVehicleMessage, offVehicleMessage } = useGlobalVehicleTracking();
+  const { addToast } = useToast();
 
   // Fetch trips when date or routes change
   React.useEffect(() => {
@@ -255,6 +261,53 @@ const TripMonitoring: React.FC = () => {
       offTripEvent('trip:end', handleTripEndEvent);
     };
   }, [selectedRoutes, onTripEvent, offTripEvent]);
+
+  // Listen for vehicle messages from route subscribers
+  React.useEffect(() => {
+    if (!selectedRoutes.length) return;
+
+    const handleVehicleMessage = (message: any) => {
+      console.log('Received vehicle message in TripMonitoring:', message);
+
+      // Modal is closed - show a toast
+      // Store message details in toast for use in action
+      const messageData = {
+        tripId: message.tripId,
+        vehicleFleetNo: message.vehicleFleetNo
+      };
+
+      addToast({
+        type: 'info',
+        message: `💬 New message from ${message.sentByUser || 'Driver'} (${message.vehicleFleetNo || 'Vehicle'})`,
+        duration: 5000,
+        action: () => {
+          // Find the trip/duty by tripId
+          const matchingTripDuty = trips.find(t => t.trip?.id.toString() === messageData.tripId);
+          if (matchingTripDuty && matchingTripDuty.trip) {
+            console.log('Opening trip details for:', matchingTripDuty);
+            setSelectedTrip({
+              id: matchingTripDuty.trip.id,
+              startTime: matchingTripDuty.trip.startTime,
+              endTime: matchingTripDuty.trip.endTime,
+              status: matchingTripDuty.trip.status || 'inProgress',
+              driverName: matchingTripDuty.driver?.name || matchingTripDuty.driverName || '',
+              vehicleFleetNo: matchingTripDuty.vehicle?.fleetNo || matchingTripDuty.vehiclePlateNo || ''
+            });
+            // Set vehicle ID and open both modals
+            setSelectedVehicleId(message.vehicleId);
+            setShowTripDetailsModal(true);
+            setShowMessageModal(true);
+          }
+        }
+      });
+    };
+
+    onVehicleMessage(handleVehicleMessage);
+
+    return () => {
+      offVehicleMessage(handleVehicleMessage);
+    };
+  }, [selectedRoutes, trips, onVehicleMessage, offVehicleMessage, addToast]);
 
   const fetchTrips = async () => {
     setLoading(true);
@@ -377,6 +430,16 @@ const TripMonitoring: React.FC = () => {
           isOpen={showTripDetailsModal}
           onClose={() => setShowTripDetailsModal(false)}
           tripId={selectedTrip.id}
+        />
+      )}
+
+      {/* Vehicle Message Modal */}
+      {showMessageModal && selectedVehicleId && (
+        <VehicleMessageModal
+          isOpen={showMessageModal}
+          vehicleId={selectedVehicleId}
+          sentByUserId={currentUserId}
+          onClose={() => setShowMessageModal(false)}
         />
       )}
     </PageContainer>

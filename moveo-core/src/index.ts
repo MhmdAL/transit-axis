@@ -22,6 +22,7 @@ import trackingRoutes from './routes/tracking';
 import serviceScheduleRoutes from './routes/serviceSchedules';
 import dutyRoutes from './routes/duties';
 import incidentRoutes from './routes/incidents';
+import vehicleMessageRoutes from './routes/vehicleMessages';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -58,6 +59,7 @@ app.use('/api/tracking', trackingRoutes);
 app.use('/api/service-schedules', serviceScheduleRoutes);
 app.use('/api/duties', dutyRoutes);
 app.use('/api/incidents', incidentRoutes);
+app.use('/api/vehicle-messages', vehicleMessageRoutes);
 
 // Error handling
 app.use(notFoundHandler);

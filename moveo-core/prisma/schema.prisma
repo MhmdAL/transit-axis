@@ -58,6 +58,7 @@ model User {
 
   incidentsReported Incident[] @relation("incidentsReported")
   incidentsResolved Incident[] @relation("incidentsResolved")
+  VehicleMessage VehicleMessage[]
 }
 
 
@@ -117,6 +118,7 @@ model Vehicle {
   @@map("vehicle")
   Duty Duty[]
   Incident Incident[]
+  VehicleMessage VehicleMessage[]
 }
 
 model Location {
@@ -152,6 +154,7 @@ model Route {
   @@map("route")
   TripDuty TripDuty[]
   Incident Incident[]
+  VehicleMessage VehicleMessage[]
 }
 
 model RouteStop {
@@ -190,6 +193,7 @@ model Trip {
   driver              Driver      @relation(fields: [driverId], references: [id])
   vehicle             Vehicle     @relation(fields: [vehicleId], references: [id])
   tripStops           TripStop[]
+  vehicleMessages     VehicleMessage[]
 
   @@map("trip")
   Incident Incident[]
@@ -257,6 +261,31 @@ enum IncidentType {
   TRAFFIC
   SAFETY
   OTHER
+}
+
+enum VehicleMessageSeverity {
+  NORMAL
+  WARNING
+  CRITICAL
+}
+
+model VehicleMessage {
+  id        BigInt   @id @default(autoincrement())
+  vehicleId BigInt
+  routeId   BigInt?
+  tripId    BigInt?
+  message   String
+  sentAt    DateTime
+  
+  sentByUserId BigInt
+  severity VehicleMessageSeverity @default(NORMAL)
+
+  sentByUser User @relation(fields: [sentByUserId], references: [id])
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id])
+  route     Route?   @relation(fields: [routeId], references: [id])
+  trip      Trip?    @relation(fields: [tripId], references: [id])
+
+  @@map("vehicle_message")
 }
 
 model Shift {

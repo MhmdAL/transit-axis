@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { TripsModule } from './trips/trips.module';
 import { TelemetryModule } from './telemetry/telemetry.module';
 import { DutiesModule } from './duties/duties.module';
+import { MessagesModule } from './messages/messages.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -19,6 +20,7 @@ import configuration from './config/configuration';
     TripsModule,
     TelemetryModule,
     DutiesModule,
+    MessagesModule,
   ],
   controllers: [AppController],
   providers: [],

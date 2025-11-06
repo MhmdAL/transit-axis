@@ -267,6 +267,35 @@ export const useVehicleTracking = (options: UseVehicleTrackingOptions = {}) => {
   );
 
   /**
+   * Listen to vehicle messages from route subscribers
+   */
+  const onVehicleMessage = useCallback(
+    (callback: (message: any) => void) => {
+      if (!socketRef.current?.connected) {
+        setError('Not connected to server');
+        return;
+      }
+
+      console.log('Listening to vehicle messages');
+
+      socketRef.current.on('vehicle:message', callback);
+    },
+    [],
+  );
+
+  /**
+   * Stop listening to vehicle messages
+   */
+  const offVehicleMessage = useCallback(
+    (callback: (message: any) => void) => {
+      if (socketRef.current) {
+        socketRef.current.off('vehicle:message', callback);
+      }
+    },
+    [],
+  );
+
+  /**
    * Auto-connect on mount if enabled
    */
   useEffect(() => {
@@ -297,6 +326,8 @@ export const useVehicleTracking = (options: UseVehicleTrackingOptions = {}) => {
     offVehicleTelemetry,
     sendTelemetry,
     requestStats,
+    onVehicleMessage,
+    offVehicleMessage,
   };
 };
 

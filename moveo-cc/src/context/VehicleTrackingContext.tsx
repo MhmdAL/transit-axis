@@ -20,6 +20,8 @@ interface VehicleTrackingContextType {
   offVehicleTelemetry: (callback: (telemetry: VehicleTelemetry) => void) => void;
   sendTelemetry: (telemetry: any) => void;
   requestStats: (callback?: (stats: ServerStats) => void) => void;
+  onVehicleMessage: (callback: (message: any) => void) => void;
+  offVehicleMessage: (callback: (message: any) => void) => void;
 }
 
 const VehicleTrackingContext = createContext<VehicleTrackingContextType | undefined>(undefined);

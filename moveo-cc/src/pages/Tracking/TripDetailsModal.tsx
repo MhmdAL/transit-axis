@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { theme } from '../../styles/theme';
 import { apiService } from '../../services/apiService';
 import IncidentModal from './IncidentModal';
+import VehicleMessageModal from './VehicleMessageModal';
 
 const ModalOverlay = styled.div<{ isOpen: boolean }>`
   position: fixed;
@@ -521,6 +522,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({ isOpen, tripId, tri
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showIncidentModal, setShowIncidentModal] = useState(false);
+  const [showMessageModal, setShowMessageModal] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -652,11 +654,7 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({ isOpen, tripId, tri
                 </ActionButton>
                 <ActionButton 
                   variant="secondary"
-                  onClick={() => {
-                    // Send message to vehicle app logic
-                    console.log('Send message to vehicle app');
-                    // TODO: Implement messaging feature
-                  }}
+                  onClick={() => setShowMessageModal(true)}
                 >
                   <span style={{ fontSize: '16px' }}>💬</span>
                   <span>Message</span>
@@ -751,6 +749,16 @@ const TripDetailsModal: React.FC<TripDetailsModalProps> = ({ isOpen, tripId, tri
           driverId={tripDetails?.driver?.id?.toString() || ''}
           currentUserId={'1'}
           onClose={() => setShowIncidentModal(false)}
+        />,
+        document.body
+      )}
+
+      {tripDetails && createPortal(
+        <VehicleMessageModal
+          isOpen={showMessageModal}
+          vehicleId={tripDetails?.vehicle?.id?.toString() || ''}
+          sentByUserId={'1'}
+          onClose={() => setShowMessageModal(false)}
         />,
         document.body
       )}

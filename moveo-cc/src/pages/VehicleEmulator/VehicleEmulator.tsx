@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { theme } from '../../styles/theme';
 import Sidebar from '../../components/Sidebar/Sidebar';
+import DriverMessageModal from '../Tracking/DriverMessageModal';
 
 const PageContainer = styled.div`
   display: flex;
@@ -298,6 +299,9 @@ const VehicleEmulator: React.FC = () => {
   const [dutiesDate, setDutiesDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [dutiesVehicleId, setDutiesVehicleId] = useState<string>('1');
   const [customTime, setCustomTime] = useState<string>('');
+
+  // Messages state
+  const [showMessageModal, setShowMessageModal] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -632,6 +636,14 @@ const VehicleEmulator: React.FC = () => {
             </StatusValue>
           </StatusCard>
 
+          <Button 
+            $variant="primary" 
+            onClick={() => setShowMessageModal(true)}
+            style={{ background: '#8b5cf6', marginBottom: theme.spacing.md }}
+          >
+            💬 Messages
+          </Button>
+
           {tripStatus === 'active' && (
             <InfoGrid>
               <InfoItem>
@@ -762,6 +774,15 @@ const VehicleEmulator: React.FC = () => {
           )}
         </EmulatorCard>
       </MainContent>
+
+      <DriverMessageModal
+        isOpen={showMessageModal}
+        vehicleId={dutiesVehicleId}
+        driverId={driverId.toString()}
+        routeId={routeId?.toString() || ''}
+        tripId={currentTripId?.toString() || ''}
+        onClose={() => setShowMessageModal(false)}
+      />
     </PageContainer>
   );
 };
